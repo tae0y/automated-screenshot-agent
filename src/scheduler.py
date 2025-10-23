@@ -1,16 +1,22 @@
 import asyncio, os, json, datetime, hashlib
-from src.urls import URLS
-from src.collector.browser import render
-from src.collector.screenshot import naive_sections_from_full
-from src.preprocess.clean import clean_html_to_md
-from src.inference.runner import run_inference
-from src.storage.sink import insert_record
+from urls import URLS
+from collector.browser import render
+from collector.screenshot import naive_sections_from_full
+from preprocess.clean import clean_html_to_md
+from inference.runner import run_inference
+from storage.sink import insert_record
 
 OUTDIR = "data"
 
 async def process_one(url: str):
+    print(f"[INFO] Start processing: {url}")
     # 렌더링 및 수집
-    r = await render(url)
+    try:
+        print("[INFO] Rendering and collecting...")
+        r = await render(url)
+    except Exception as e:
+        print(f"[ERROR] Rendering failed for {url}: {e}")
+        raise
     ts = datetime.datetime.utcnow().isoformat()
     day = datetime.datetime.utcnow().strftime("%Y%m%d")
     h = hashlib.sha1(url.encode()).hexdigest()[:8]
@@ -25,14 +31,18 @@ async def process_one(url: str):
     with open(html_path, "w", encoding="utf-8") as f:
         f.write(r["html"])
 
-    # 정제 텍스트
+    print("[INFO] Cleaning HTML to Markdown...")
     md = clean_html_to_md(r["html"])
     # 섹션 분할 메타만 사용(모델 입력은 전체 스크린샷)
     sec = naive_sections_from_full(r["png_bytes"])
     _w, _h = sec["w"], sec["h"]
 
-    # 추론
-    out = run_inference(r["png_bytes"], md)
+    print("[INFO] Running inference...")
+    try:
+        out = run_inference(r["png_bytes"], md)
+    except Exception as e:
+        print(f"[ERROR] Inference failed for {url}: {e}")
+        raise
 
     # 콘솔 오류 반영
     errs = [m["text"] for m in r["console"] if m["type"] == "error"]
@@ -43,8 +53,13 @@ async def process_one(url: str):
     out.site_url = url
     out.crawl_ts = ts
 
-    # 저장
-    insert_record(out, png_path, html_path)
+    print("[INFO] Inserting record to storage...")
+    try:
+        insert_record(out, png_path, html_path)
+    except Exception as e:
+        print(f"[ERROR] Storage insert failed for {url}: {e}")
+        raise
+    print(f"[INFO] Finished processing: {url}")
     return out
 
 async def run_all():
@@ -52,9 +67,12 @@ async def run_all():
     results = []
     for u in URLS:
         try:
-            results.append(await process_one(u))
+            result = await process_one(u)
+            results.append(result)
         except Exception as e:
+            print(f"[ERROR] Failed to process {u}: {e}")
             results.append({"site_url": u, "error": str(e)})
+    print("[INFO] All processing complete.")
     return results
 
 def main():
