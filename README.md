@@ -1,27 +1,12 @@
 # README
 
-## Getting Started
+UI 테스트를 자동화하기
 
-1. Get the code
+## STEP 00 : 매일아침 자동으로 스크린샷
 
-    ```bash
-    git clone {REPO_URL}
-    ```
 
-1. Activate uv environment.
+## STEP 01 : Playwright MCP를 사용해 자동점검
 
-    ```bash
-    uv venv .venv
 
-    # Windows
-    .venv\Scripts\activate
+## STEP 02 : 멀티모달 LLM을 사용해 정적분석
 
-    # Unix
-    source .venv/bin/activate
-    ```
-
-1. Run the code
-
-    ```bash
-    uv run src/main.py
-    ```

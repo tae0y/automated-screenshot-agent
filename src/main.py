@@ -1,1 +1,0 @@
-print("Welcome, it's automated screenshot agent!")
