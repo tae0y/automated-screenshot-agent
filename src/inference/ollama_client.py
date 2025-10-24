@@ -1,7 +1,8 @@
+
 import base64, json, httpx, time
 from tenacity import retry, stop_after_attempt, wait_fixed
-from ..config import OLLAMA_URL
-from .schema import OutputJSON
+from src.config import OLLAMA_URL
+from src.inference.schema import OutputJSON
 
 def _b64(png: bytes) -> str:
     return base64.b64encode(png).decode()

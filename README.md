@@ -31,7 +31,8 @@ and is designed to fall back to Azure AI Foundry if needed.
 
     ```bash
     cd "$REPO_ROOT"
-    uv venv .venv
+    uv venv .venv && uv sync
+    playwright install
 
     # Windows
     .venv\Scripts\activate

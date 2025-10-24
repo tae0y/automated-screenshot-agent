@@ -1,5 +1,6 @@
-from .db import get_conn
-from ..inference.schema import OutputJSON
+
+from src.storage.db import get_conn
+from src.inference.schema import OutputJSON
 import json
 
 def insert_record(out: OutputJSON, png_path: str, html_path: str):

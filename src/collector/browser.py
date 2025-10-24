@@ -1,7 +1,8 @@
+
 import asyncio, time
 from contextlib import asynccontextmanager
 from playwright.async_api import async_playwright
-from ..config import VIEWPORT, TIMEOUT_S
+from src.config import VIEWPORT, TIMEOUT_S
 
 @asynccontextmanager
 async def chromium():

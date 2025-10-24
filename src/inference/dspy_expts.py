@@ -1,7 +1,8 @@
+
 import json
 import dspy
-from ..config import OLLAMA_URL
-from .schema import OutputJSON
+from src.config import OLLAMA_URL
+from src.inference.schema import OutputJSON
 
 class WebAuditSig(dspy.Signature):
     """Produce JSON per schema from screenshot+markdown."""

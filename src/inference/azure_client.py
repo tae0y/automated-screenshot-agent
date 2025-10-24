@@ -1,6 +1,7 @@
+
 import os, json, base64, time, httpx
-from ..config import AZURE_ENDPOINT, AZURE_API_KEY
-from .schema import OutputJSON
+from src.config import AZURE_ENDPOINT, AZURE_API_KEY
+from src.inference.schema import OutputJSON
 
 def infer_azure(png_full: bytes, md: str) -> OutputJSON:
     if not AZURE_ENDPOINT or not AZURE_API_KEY:

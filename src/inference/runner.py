@@ -1,6 +1,7 @@
-from .ollama_client import infer_ollama
-from .azure_client import infer_azure
-from .schema import OutputJSON
+
+from src.inference.ollama_client import infer_ollama
+from src.inference.azure_client import infer_azure
+from src.inference.schema import OutputJSON
 
 LOCAL_MODELS = ["moondream", "granite3.2-vision:2b", "llava:7b"]
 

@@ -1,10 +1,11 @@
+
 import asyncio, os, json, datetime, hashlib
-from urls import URLS
-from collector.browser import render
-from collector.screenshot import naive_sections_from_full
-from preprocess.clean import clean_html_to_md
-from inference.runner import run_inference
-from storage.sink import insert_record
+from src.urls import URLS
+from src.collector.browser import render
+from src.collector.screenshot import naive_sections_from_full
+from src.preprocess.clean import clean_html_to_md
+from src.inference.runner import run_inference
+from src.storage.sink import insert_record
 
 OUTDIR = "data"
 
