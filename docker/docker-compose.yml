@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
-      POSTGRES_DB: bwsdb
+      POSTGRES_DB: asa_db
     ports:
       - "5711:5432"
     volumes:
