@@ -31,8 +31,19 @@ and is designed to fall back to Azure AI Foundry if needed.
 
     ```bash
     cd "$REPO_ROOT"
+
     uv venv .venv && uv sync
     playwright install
+
+1. (선택) 저장 경로 등 환경설정
+
+    프로젝트 루트에 .env 파일을 생성해 아래와 같이 저장 경로를 지정할 수 있습니다:
+
+    ```env
+    OUTDIR=data
+    ```
+
+    기본값은 data 폴더이며, 원하는 경로로 변경 가능합니다.
 
     # Windows
     .venv\Scripts\activate

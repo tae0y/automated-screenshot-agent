@@ -7,7 +7,7 @@ from src.preprocess.clean import clean_html_to_md
 from src.inference.runner import run_inference
 from src.storage.sink import insert_record
 
-OUTDIR = "data"
+from src.config import OUTDIR
 
 async def process_one(url: str):
     print(f"[INFO] Start processing: {url}")
@@ -73,6 +73,7 @@ async def run_all():
         except Exception as e:
             print(f"[ERROR] Failed to process {u}: {e}")
             results.append({"site_url": u, "error": str(e)})
+        break #test
     print("[INFO] All processing complete.")
     return results
 
