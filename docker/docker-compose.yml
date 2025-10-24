@@ -1,0 +1,28 @@
+services:
+  asa_db:
+    container_name: asa_db
+    build:
+      context: .
+      dockerfile: db
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: bwsdb
+    ports:
+      - "5711:5432"
+    volumes:
+      - ./volumes/db:/var/lib/postgresql/data
+      - ./configs/initdb.d:/docker-entrypoint-initdb.d
+
+  asa_dbadmin:
+    container_name: asa_dbadmin
+    build:
+      context: .
+      dockerfile: dbadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: root@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5712:80"
+    volumes:
+      - ./volumes/dbadmin:/var/lib/pgadmin

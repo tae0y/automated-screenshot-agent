@@ -6,7 +6,7 @@ and is designed to fall back to Azure AI Foundry if needed.
 
 ## Getting Started
 
-1. Get the code
+1. Get the code.
 
     ```bash
     git clone {REPO_URL}
@@ -20,9 +20,17 @@ and is designed to fall back to Azure AI Foundry if needed.
     cd "$REPO_ROOT"
     ```
 
-1. Activate uv environment.
+1. Run the docker db, dbadmin containers.
 
     ```bash
+    cd "$REPO_ROOT"/docker
+    docker-compose up -d
+    ```
+
+1. Activate uv python environment.
+
+    ```bash
+    cd "$REPO_ROOT"
     uv venv .venv
 
     # Windows
@@ -31,7 +39,7 @@ and is designed to fall back to Azure AI Foundry if needed.
 
     > **NOTE**: This project is dependent on Windows and currently does not support Linux or Mac.
 
-1. Run the code
+1. Run the app.
 
     ```bash
     uv run -m src.main
