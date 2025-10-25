@@ -1,12 +1,15 @@
 import configparser
+import logging
 import os
 
-from src.logger import logger
+from src.logger import get_logger
+
+logger = get_logger(__name__, level=logging.DEBUG)
 
 
 class ConfigManager:
     _instance = None
-    
+
     @property
     def URLS(self):
         urls = []
@@ -38,6 +41,10 @@ class ConfigManager:
             self._initialized = True
 
     def load(self):
+        """
+        Load configuration from file
+        """
+        # Read the configuration file
         CONFIG_FILE = "config.ini"
         SAMPLE_FILE = "config.sample.ini"
         _config = configparser.ConfigParser()
@@ -47,7 +54,7 @@ class ConfigManager:
                 with open(CONFIG_FILE, 'w') as config_file:
                     config_file.write(sample_file.read())
                     logger.info(f"Configuration from {SAMPLE_FILE} copied to {CONFIG_FILE}.")
-
+        # Parse the configuration file
         try:
             _config.read(CONFIG_FILE)
             self._config = _config
@@ -57,5 +64,8 @@ class ConfigManager:
             raise
 
     def reload(self):
+        """
+        Reload configuration from file
+        """
         self.load()
         logger.info("Configuration reloaded successfully.")

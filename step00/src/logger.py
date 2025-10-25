@@ -26,6 +26,11 @@ logging.basicConfig(
 
 
 def get_logger(name: str, level=logging.INFO) -> logging.Logger:
+    """
+    Get a logger instance
+    - name: Logger name, pass __name__ typically
+    - level: Logging level, default to INFO
+    """
     _logger = logging.getLogger(name)
     _logger.setLevel(level)
     return _logger
