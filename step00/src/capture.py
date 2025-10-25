@@ -1,4 +1,5 @@
 from src.logger import get_logger
+from src.models import UrlInfo
 
 _logger = get_logger(__name__)
 
@@ -15,7 +16,7 @@ def is_valid_url(url: str) -> bool:
     return url.startswith("http://") or url.startswith("https://")
 
 
-def capture_one(url: str) -> bool:
+def capture_one(url: UrlInfo) -> bool:
     """
     스크린샷 캡처 단건
     - param
@@ -23,15 +24,15 @@ def capture_one(url: str) -> bool:
     - return
         - is_success: 캡처 성공 여부
     """
-    _logger.debug(f"capture called for url: {url}")
+    _logger.debug(f"capture called for one url: {url}")
     is_success = None
 
-    if not is_valid_url(url):
-        _logger.error(f"Invalid URL format: {url}")
-        raise ValueError(f"Invalid URL format: {url}")
+    if not is_valid_url(url.url):
+        _logger.error(f"Invalid URL format: {url.url}")
+        raise ValueError(f"Invalid URL format: {url.url}")
 
     try:
-        # Simulate screenshot capture logic
+        # TODO: 실제 캡처로직 수행
         is_success = True
     except Exception as e:
         _logger.error(f"Error occurred while capturing {url}: {e}")
@@ -40,7 +41,7 @@ def capture_one(url: str) -> bool:
     return is_success
 
 
-def capture_all(urls: list[str]) -> tuple[list[str], list[str]]:
+def capture_all(urls: list[UrlInfo]) -> tuple[list[UrlInfo], list[UrlInfo]]:
     """
     스크린샷 캡처 여러건
     - param
@@ -49,7 +50,7 @@ def capture_all(urls: list[str]) -> tuple[list[str], list[str]]:
         - passed_url: 캡처 성공한 URL 리스트
         - failed_url: 캡처 실패한 URL 리스트
     """
-    _logger.debug(f"capture called for urls: {urls}")
+    _logger.debug(f"capture called for multi urls: {urls}")
 
     passed_url = []
     failed_url = []

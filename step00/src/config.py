@@ -2,6 +2,7 @@ import configparser
 import logging
 import os
 
+from src.models import UrlInfo
 from src.logger import get_logger
 
 logger = get_logger(__name__, level=logging.DEBUG)
@@ -12,10 +13,10 @@ class ConfigManager:
 
     @property
     def URLS(self):
-        urls = []
+        urls: list[UrlInfo] = []
         if "URLS" in self._config:
             for name, url in self._config.items("URLS"):
-                urls.append({"name": name, "url": url})
+                urls.append(UrlInfo(name=name, url=url))
         return urls
 
     @property
