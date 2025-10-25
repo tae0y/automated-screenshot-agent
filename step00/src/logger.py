@@ -10,7 +10,7 @@ if not os.path.exists(LOG_DIR):
     os.makedirs(LOG_DIR)
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s - %(name)s [%(levelname)s] %(message)s",
     handlers=[
         handlers.TimedRotatingFileHandler(

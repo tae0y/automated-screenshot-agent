@@ -1,14 +1,27 @@
 import configparser
-import logging
 import os
+import logging
 
 from src.logger import get_logger
 
-logger = get_logger(__name__, level=logging.DEBUG)
+logger = get_logger(__name__)
 
 
 class ConfigManager:
     _instance = None
+
+    @property
+    def TOKEN(self):
+        return self._config.get("AGENT", "TOKEN", fallback="default_token")
+
+    @property
+    def PORT(self):
+        return self._config.getint("AGENT", "PORT", fallback=9910)
+
+    @property
+    def LOG_LEVEL(self):
+        level_str = self._config.get("AGENT", "LOG_LEVEL", fallback="INFO").upper()
+        return getattr(logging, level_str, logging.INFO)
 
     @property
     def URLS(self):
