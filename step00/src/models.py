@@ -13,9 +13,9 @@ class UrlInfo(BaseModel):
 
 
 class ScreenshotResultData(BaseModel):
-    requestedUrls: List[str]
-    passedUrls: List[str]
-    failedUrls: List[str]
+    requestedUrls: List[UrlInfo]
+    passedUrls: List[UrlInfo]
+    failedUrls: List[UrlInfo]
 
     def __init__(self, requestedUrls, passedUrls, failedUrls, **kwargs):
         requestedUrls = [requestedUrls] if not isinstance(requestedUrls, list) else requestedUrls
