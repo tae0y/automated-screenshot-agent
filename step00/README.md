@@ -17,19 +17,21 @@
     cd "$REPOSITORY_ROOT/step00"
     ```
 
-1. 파이썬 가상환경을 설정합니다.
-   ```bash
-   uv venv .venv
-   source .venv/bin/activate
-   uv sync
-   ```
-
 1. config.ini를 생성합니다.
     ```bash
-    cp config.sample.ini config.ini
+    cp src/config.sample.ini src/config.ini
     ```
+
+1. 파이썬 가상환경을 설정합니다.
+   ```bash
+   uv venv .step00
+   source .step00/bin/activate
+   export UV_PROJECT_ENVIRONMENT=.step00 && uv sync
+   ```
 
 1. 앱을 실행합니다.
     ```bash
-    uv run -m src.screenshotAgent
+    uv run uvicorn src.screenshotAgent:app --reload --port 9910
     ```
+
+1. /docs Swagger 화면에 접속해 확인해봅시다.
