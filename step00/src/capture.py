@@ -11,17 +11,13 @@ def capture_one(url: str):
     _logger.debug(f"capture called for url: {url}")
     
     # Validate URL format
-    try:
-        parsed = urlparse(url)
-        # URL must have a scheme (http/https) and a network location (domain)
-        if not all([parsed.scheme, parsed.netloc]):
-            _logger.error(f"Invalid URL format: {url}")
-            return False
-        if parsed.scheme not in ['http', 'https']:
-            _logger.error(f"Invalid URL scheme (must be http or https): {url}")
-            return False
-    except Exception as e:
-        _logger.error(f"Error parsing URL {url}: {e}")
+    parsed = urlparse(url)
+    # URL must have a scheme (http/https) and a network location (domain)
+    if not all([parsed.scheme, parsed.netloc]):
+        _logger.error(f"Invalid URL format: {url}")
+        return False
+    if parsed.scheme not in ['http', 'https']:
+        _logger.error(f"Invalid URL scheme (must be http or https): {url}")
         return False
     
     is_success = None
