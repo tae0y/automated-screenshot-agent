@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 from src.logger import get_logger
 from src.models import UrlInfo
 
@@ -12,8 +13,14 @@ def is_valid_url(url: str) -> bool:
     - return
         - is_valid: 유효성 검사 결과
     """
-    # TODO: URL 유효성 검사 개선
-    return url.startswith("http://") or url.startswith("https://")
+    parsed = urlparse(url)
+    if not all([parsed.scheme, parsed.netloc]):
+        _logger.error(f"Invalid URL format: {url}")
+        return False
+    if parsed.scheme not in ['http', 'https']:
+        _logger.error(f"Invalid URL scheme (must be http or https): {url}")
+        return False
+    return True
 
 
 def capture_one(url: UrlInfo) -> bool:
