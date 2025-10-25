@@ -1,0 +1,10 @@
+[project]
+name = "automated-screenshot-agent"
+version = "0.1.0"
+description = "scheduled screenshot agent automatically"
+readme = "README.md"
+requires-python = ">=3.12, <3.13"
+dependencies = [
+    "fastapi>=0.120.0",
+    "uvicorn>=0.38.0",
+]
