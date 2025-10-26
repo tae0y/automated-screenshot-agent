@@ -8,8 +8,11 @@ from src.logger import get_logger
 logger = get_logger(__name__, level=logging.DEBUG)
 
 
+
 class ConfigManager:
     _instance = None
+    CONFIG_FILE = "config.ini"
+    SAMPLE_FILE = "config.sample.ini"
 
     @property
     def URLS(self):
@@ -50,22 +53,22 @@ class ConfigManager:
         Load configuration from file
         """
         # Read the configuration file
-        CONFIG_FILE = "config.ini"
-        SAMPLE_FILE = "config.sample.ini"
+        config_file_path = self.CONFIG_FILE
+        sample_file_path = self.SAMPLE_FILE
         _config = configparser.ConfigParser()
-        if not os.path.exists(CONFIG_FILE):
-            logger.warning(f"Configuration from {CONFIG_FILE} not found.")
-            with open(SAMPLE_FILE, 'r') as sample_file:
-                with open(CONFIG_FILE, 'w') as config_file:
+        if not os.path.exists(config_file_path):
+            logger.warning(f"Configuration from {config_file_path} not found.")
+            with open(sample_file_path, 'r') as sample_file:
+                with open(config_file_path, 'w') as config_file:
                     config_file.write(sample_file.read())
-                    logger.info(f"Configuration from {SAMPLE_FILE} copied to {CONFIG_FILE}.")
+                    logger.info(f"Configuration from {sample_file_path} copied to {config_file_path}.")
         # Parse the configuration file
         try:
-            _config.read(CONFIG_FILE)
+            _config.read(config_file_path)
             self._config = _config
-            logger.info(f"Configuration from {CONFIG_FILE} loaded successfully.")
+            logger.info(f"Configuration from {config_file_path} loaded successfully.")
         except Exception as e:
-            logger.error(f"Error loading configuration from {CONFIG_FILE}: {e}")
+            logger.error(f"Error loading configuration from {config_file_path}: {e}")
             raise
 
     def reload(self):

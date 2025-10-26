@@ -7,15 +7,19 @@ DEFAULT_IMG_MAX_WIDTH = 1280
 DEFAULT_TIMEOUT = 30
 
 
-def test_given_missing_config_when_configmanager_created_then_should_create_from_sample(tmp_path, monkeypatch):
-    # config.ini, config.sample.ini 경로를 임시 디렉터리로 변경
+def test_given_missing_config_when_configmanager_created_then_should_create_from_sample(tmp_path):
+    """
+    config.ini가 없을 때 sample 파일을 복사하여 생성하는지 확인
+    """
     config_file = tmp_path / "config.ini"
     sample_file = tmp_path / "config.sample.ini"
     sample_file.write_text("[SCREENSHOT]\nSAVE_PATH=./data/screenshots/\nWEBP_QUALITY=80\nIMG_MAX_WIDTH=1024\nTIMEOUT=10\n")
-    monkeypatch.setattr("src.config.CONFIG_FILE", str(config_file))
-    monkeypatch.setattr("src.config.SAMPLE_FILE", str(sample_file))
-    # config.ini가 없을 때 생성되는지 확인
-    manager = ConfigManager()
+    # 실제 파일 경로를 임시로 변경하여 테스트
+    import src.config
+    src.config.ConfigManager.CONFIG_FILE = str(config_file)
+    src.config.ConfigManager.SAMPLE_FILE = str(sample_file)
+    src.config.ConfigManager._instance = None  # 싱글턴 초기화
+    manager = src.config.ConfigManager()
     assert os.path.exists(config_file)
     assert manager.SAVE_PATH == "./data/screenshots/"
     assert manager.WEBP_QUALITY == 80
@@ -23,17 +27,22 @@ def test_given_missing_config_when_configmanager_created_then_should_create_from
     assert manager.TIMEOUT == 10
 
 
-def test_given_configmanager_when_reload_invoked_then_should_reload(monkeypatch):
+def test_given_configmanager_when_reload_invoked_then_should_reload():
     manager = ConfigManager()
-    monkeypatch.setattr(manager, "load", lambda: setattr(manager, "_config", manager._config))
     manager.reload()
     assert hasattr(manager, "_config")
 
 
-def test_given_invalid_config_when_property_accessed_then_should_fallback(monkeypatch):
-    manager = ConfigManager()
-    # _config에 잘못된 값 주입
-    manager._config = {}
+def test_given_invalid_config_when_property_accessed_then_should_fallback(tmp_path):
+    import src.config
+    src.config.ConfigManager._instance = None  # 싱글턴 초기화
+    """
+    configparser 객체에 값이 없을 때 fallback 값 반환 확인
+    """
+    config_file = tmp_path / "config.ini"
+    config_file.write_text("")
+    src.config.ConfigManager.CONFIG_FILE = str(config_file)
+    manager = src.config.ConfigManager()
     assert manager.SAVE_PATH == DEFAULT_SAVE_PATH
     assert manager.WEBP_QUALITY == DEFAULT_WEBP_QUALITY
     assert manager.IMG_MAX_WIDTH == DEFAULT_IMG_MAX_WIDTH

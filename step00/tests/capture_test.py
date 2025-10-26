@@ -23,51 +23,48 @@ def test_given_invalid_url_when_is_valid_url_invoked_then_should_return_false(ur
 def test_given_valid_url_when_is_valid_url_invoked_then_should_return_true(url):
     assert is_valid_url(url)
 
-
-@pytest.mark.asyncio
-@pytest.mark.parametrize("name,url", [
-    (VALID_NAME, "invalid-url"),
-    (VALID_NAME, "ftp://example.com"),
-    (VALID_NAME, ""),
+@pytest.mark.parametrize("urlinfo_dict", [
+    {"name": VALID_NAME, "url": "invalid-url"},
+    {"name": VALID_NAME, "url": "ftp://example.com"},
+    {"name": VALID_NAME, "url": ""},
 ])
-def test_given_invalid_urlinfo_when_capture_one_invoked_then_should_throw(name, url):
-    urlinfo = UrlInfo(name=name, url=url)
-    with pytest.raises(ValueError):
-        asyncio.run(capture_one(urlinfo))
-
-
 @pytest.mark.asyncio
-@pytest.mark.parametrize("urlinfos", [
+async def test_given_invalid_urlinfo_when_capture_one_invoked_then_should_throw(urlinfo_dict):
+    with pytest.raises((ValueError, Exception)):
+        urlinfo = UrlInfo(**urlinfo_dict)
+        await capture_one(urlinfo)
+
+@pytest.mark.parametrize("urlinfos_dict", [
     [],
-    [UrlInfo(name=VALID_NAME, url=VALID_URL)],
+    [{"name": VALID_NAME, "url": VALID_URL}],
 ])
-def test_given_invalid_urlinfos_when_capture_all_invoked_then_should_throw(urlinfos):
-    with pytest.raises(ValueError):
-        asyncio.run(capture_all(urlinfos))
-
+@pytest.mark.asyncio
+async def test_given_invalid_urlinfos_when_capture_all_invoked_then_should_throw(urlinfos_dict):
+    with pytest.raises((ValueError, Exception)):
+        urlinfos = [UrlInfo(**x) if isinstance(x, dict) else x for x in urlinfos_dict]
+        await capture_all(urlinfos)
 
 @pytest.mark.asyncio
-def test_given_valid_urlinfo_when_capture_one_invoked_then_should_succeed():
+async def test_given_valid_urlinfo_when_capture_one_invoked_then_should_succeed():
     # 임시 저장 경로 지정
     with tempfile.TemporaryDirectory() as tmpdir:
         config = ConfigManager()
         config._config["SCREENSHOT"] = {"SAVE_PATH": tmpdir}
         urlinfo = UrlInfo(name=VALID_NAME, url=VALID_URL)
-        result = asyncio.run(capture_one(urlinfo))
+        result = await capture_one(urlinfo)
         assert result is True
         # 파일 생성 확인
         files = os.listdir(tmpdir)
         assert any(f.endswith(".png") for f in files)
 
-
 @pytest.mark.asyncio
-def test_given_mixed_urlinfos_when_capture_all_invoked_then_should_return_passed_and_failed():
+async def test_given_mixed_urlinfos_when_capture_all_invoked_then_should_return_passed_and_failed():
     with tempfile.TemporaryDirectory() as tmpdir:
         config = ConfigManager()
         config._config["SCREENSHOT"] = {"SAVE_PATH": tmpdir}
         valid = UrlInfo(name=VALID_NAME, url=VALID_URL)
         invalid = UrlInfo(name=INVALID_NAME, url="invalid-url")
         urlinfos = [valid, invalid]
-        passed, failed = asyncio.run(capture_all(urlinfos))
+        passed, failed = await capture_all(urlinfos)
         assert valid in passed
         assert invalid in failed

@@ -1,20 +1,20 @@
-from enum import Enum
-from pydantic import BaseModel
-from typing import List, Optional
 
+from enum import Enum
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 # Custom Types
 class UrlInfo(BaseModel):
     """
     URL Information Model
     """
-    name: str
-    url: str
+    name: Optional[str] = Field(None, min_length=1)
+    url: Optional[str] = Field(None, min_length=1)
 
 
 class ScreenshotGetResultData(BaseModel):
-    systemNm: str
-    imagePath: str
+    systemNm: Optional[str] = Field(None, min_length=1)
+    imagePath: Optional[str] = Field(None, min_length=1)
 
 
 class ScreenshotPostResultData(BaseModel):
