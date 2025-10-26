@@ -11,7 +11,8 @@ jobs:
   step00:
     runs-on: ubuntu-latest
     env:
-      PLAYWRIGHT_BROWSERS_PATH: .playwright
+      UV_CACHE_DIR: /tmp/.uv-cache
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/step00/.playwright
     defaults:
       run:
         working-directory: ./step00
@@ -30,37 +31,48 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
+            ${{ github.workspace }}/step00/.venv
+            ${{ github.workspace }}/step00/.cache/pip
             ~/.cache/pip
-            ./.venv
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.lock','**/requirements.txt','**/poetry.lock') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('step00/pyproject.lock','step00/requirements.txt','step00/poetry.lock') }}
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Cache Playwright browsers
         id: cache-playwright
         uses: actions/cache@v4
         with:
-          path: .playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pyproject.lock','**/requirements.txt','**/poetry.lock') }}
+          path: ${{ github.workspace }}/step00/.playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('step00/pyproject.lock','step00/requirements.txt','step00/poetry.lock') }}
           restore-keys: ${{ runner.os }}-playwright-
+
+      - name: Restore uv cache
+        id: cache-uv
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.uv-cache
+          key: uv-${{ runner.os }}-${{ hashFiles('step00/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ hashFiles('step00/uv.lock') }}
+            uv-${{ runner.os }}
 
       - name: Show cache status
         run: |
           echo "pip cache hit = ${{ steps.cache-pip.outputs.cache-hit }}"
           echo "playwright cache hit = ${{ steps.cache-playwright.outputs.cache-hit }}"
+          echo "uv cache hit = ${{ steps.cache-uv.outputs.cache-hit }}"
 
       - name: Install uv (astral-sh)
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
-      - name: Sync dependencies (time measurement)
+      - name: Sync dependencies (timed)
         run: |
           echo "=== uv sync start ==="
           time uv sync --all-groups
           echo "=== uv sync done ==="
 
-      # Install Playwright browsers only if cache miss
-      - name: Install Playwright browsers (if cache miss)
+      - name: Install Playwright browsers (only if cache miss)
         if: ${{ steps.cache-playwright.outputs.cache-hit != 'true' }}
         run: uv run playwright install
 
@@ -69,7 +81,7 @@ jobs:
           uv run uvicorn src.screenshotAgent:app --port 9910 &
           for i in $(seq 1 30); do
             if curl -sSf http://localhost:9910/openapi.json >/dev/null 2>&1; then
-              echo "ready"
+              echo "app ready"
               break
             fi
             echo "waiting for app... ($i)"
@@ -82,3 +94,6 @@ jobs:
       - name: Run tests
         run: |
           PYTHONPATH=$PWD uv run pytest tests
+
+      - name: Minimize uv cache
+        run: uv cache prune --ci
