@@ -95,5 +95,21 @@ jobs:
         run: |
           PYTHONPATH=$PWD uv run pytest tests
 
+      - name: Stop app and ensure uv processes stopped
+        run: |
+          if [ -f /tmp/uvicorn.pid ]; then
+            kill "$(cat /tmp/uvicorn.pid)" || true
+            rm -f /tmp/uvicorn.pid
+          else
+            pkill -f "uv run uvicorn" || true
+          fi
+          for i in $(seq 1 10); do
+            if ! pgrep -f 'uv ' >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          echo "uv processes cleared."
+
       - name: Minimize uv cache
         run: uv cache prune --ci
