@@ -5,6 +5,7 @@ import tempfile
 import os
 from src.models import UrlInfo
 from src.config import ConfigManager
+import httpx
 
 # 테스트용 상수
 INVALID_SYSTEM_NM = None
@@ -98,3 +99,22 @@ def test_given_valid_systemNm_when_post_screenshot_invoked_then_should_return_su
     response = client.post("/screenshot", json={"systemNm": systemNm})
     assert response.status_code == 200
     assert response.json()["resultCd"] == SUCCESS_RESULT_CD
+
+
+# 통합 테스트: 실제 서버에 요청
+@pytest.mark.asyncio
+async def test_integration_get_openapi():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://localhost:9910/openapi.json")
+        assert response.status_code == 200
+        assert "openapi" in response.json()
+
+
+@pytest.mark.asyncio
+async def test_integration_get_screenshot_invalid_systemNm():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("http://localhost:9910/screenshot")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["resultCd"] == ERROR_RESULT_CD
+        assert "systemNm query parameter is required" in data["resultMsg"]

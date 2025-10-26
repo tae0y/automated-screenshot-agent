@@ -26,13 +26,13 @@ jobs:
       - name: Set up virtual environment
         run: uv sync --all-groups 
 
-      # smoke tests
-      - name: Run smoke tests
+      - name: Run the app
         run: |
           uv run uvicorn src.screenshotAgent:app --port 9910 &
           sleep 10
-          curl http://localhost:9910/openapi.json -o openapi.json
 
-      # unit, integration tests
+      - name: Smoke tests
+        run: curl http://localhost:9910/openapi.json -o openapi.json
+
       - name: Run tests
-        run: PYTHONPATH=$PWD pytest
+        run: PYTHONPATH=$PWD uv run pytest tests
