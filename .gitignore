@@ -13,6 +13,7 @@ gitignore/**
 .github/chatmodes
 .github/instructions
 .github/prompts
+.github/copilot-instructions.md
 
 .vscode/
 
