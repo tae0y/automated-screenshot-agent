@@ -12,7 +12,12 @@ class UrlInfo(BaseModel):
     url: str
 
 
-class ScreenshotResultData(BaseModel):
+class ScreenshotGetResultData(BaseModel):
+    systemNm: str
+    imagePath: str
+
+
+class ScreenshotPostResultData(BaseModel):
     requestedUrls: List[UrlInfo]
     passedUrls: List[UrlInfo]
     failedUrls: List[UrlInfo]
@@ -54,15 +59,22 @@ class BaseResponse(BaseModel):
 
 
 # Inherited Models
-class ScreenshotRequest(BaseRequest):
+class ScreenshotGetResponse(BaseResponse):
+    """
+    Screenshot Response Model
+    """
+    data: Optional[ScreenshotGetResultData] = None
+
+
+class ScreenshotPostRequest(BaseRequest):
     """
     Screenshot Request Model
     """
     systemNm: Optional[str] = None
 
 
-class ScreenshotResponse(BaseResponse):
+class ScreenshotPostResponse(BaseResponse):
     """
     Screenshot Response Model
     """
-    data: ScreenshotResultData
+    data: Optional[ScreenshotPostResultData] = None
