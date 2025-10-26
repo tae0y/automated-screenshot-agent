@@ -9,15 +9,13 @@ on:
 jobs:
   step00:
     runs-on: ubuntu-latest
+    working-directory: ./step00
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
-
-      - name: Change directory to step00
-        run: cd ./step00/
       
       - name: Set up Python
         run: uv python install 3.12
