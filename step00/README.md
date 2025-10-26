@@ -19,7 +19,7 @@
 
 1. config.ini를 생성합니다.
     ```bash
-    cp src/config.sample.ini src/config.ini
+    cp config.sample.ini config.ini
     ```
 
 1. 파이썬 가상환경을 설정합니다.
