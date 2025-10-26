@@ -34,9 +34,15 @@
     uv run --active uvicorn src.screenshotAgent:app --reload --port 9910
     ```
 
-1. /docs Swagger 화면에 접속해 확인해봅시다.
+1. `/docs` Swagger 화면에 접속해 API 명세를 확인하세요.
+
+1. 위와 같이 앱을 실행한 다음 외부 스케줄러를 사용해 호출합니다.
+
+## How to test
 
 1. 테스트는 아래와 같이 실행합니다.
    ```bash
+   export UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group test
    PYTHONPATH=$PWD pytest
+   # PYTHONPATH=$PWD pytest > pytest.log 2>&1
    ```
