@@ -11,10 +11,10 @@
     cd [REPO_NAME]
     ```
 
-1. step00 경로로 이동합니다.
+1. step01 경로로 이동합니다.
     ```bash
     REPOSITORY_ROOT=$(git rev-parse --show-toplevel)
-    cd "$REPOSITORY_ROOT/step00"
+    cd "$REPOSITORY_ROOT/step01"
     ```
 
 1. config.ini를 생성합니다.
@@ -24,9 +24,9 @@
 
 1. 파이썬 가상환경을 설정합니다.
    ```bash
-   uv venv .step00
-   source .step00/bin/activate
-   export UV_PROJECT_ENVIRONMENT=.step00 && uv sync
+   uv venv .step01
+   source .step01/bin/activate
+   export UV_PROJECT_ENVIRONMENT=.step01 && uv sync
    ```
 
 1. 앱을 실행합니다.
@@ -42,7 +42,7 @@
 
 1. 테스트는 아래와 같이 실행합니다.
     ```bash
-    export UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group test
+    export UV_PROJECT_ENVIRONMENT=.step01 && uv sync --group test
     PYTHONPATH=$PWD pytest
     ```
     > 테스트 결과를 파일로 출력하려면 `PYTHONPATH=$PWD pytest > pytest.log 2>&1` 명령어를 사용하세요.
@@ -51,14 +51,14 @@
 
 1. Python 코드가 Flake8 Convention을 준수하는지 다음과 같이 확인합니다.
     ```bash
-    export UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group dev
+    export UV_PROJECT_ENVIRONMENT=.step01 && uv sync --group dev
     flake8 src/ tests/ --count --show-source --statistics
     ```
     > 검증 결과를 파일로 출력하려면 `flake8 src/ tests/ --count --show-source --statistics > flake8.log 2>&1` 명령어를 사용하세요.
 
 2. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
     ```bash
-    export UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group dev
+    export UV_PROJECT_ENVIRONMENT=.step01 && uv sync --group dev
     uv run --active uvicorn src.screenshotAgent:app --reload --port 9910 &
     curl http://localhost:9910/openapi.json -o openapi.json
     pkill -f uvicorn
