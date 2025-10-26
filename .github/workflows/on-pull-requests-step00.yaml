@@ -10,49 +10,75 @@ on:
 jobs:
   step00:
     runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: .playwright
     defaults:
       run:
         working-directory: ./step00
-    steps:      
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup system Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
 
       - name: Cache pip and venv
+        id: cache-pip
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
-            .venv
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.lock','**/requirements.txt') }}
+            ./.venv
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.lock','**/requirements.txt','**/poetry.lock') }}
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Cache Playwright browsers
+        id: cache-playwright
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pyproject.lock','**/requirements.txt') }}
+          path: .playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pyproject.lock','**/requirements.txt','**/poetry.lock') }}
           restore-keys: ${{ runner.os }}-playwright-
 
-      - uses: actions/checkout@v4
-      - name: Install uv
+      - name: Show cache status
+        run: |
+          echo "pip cache hit = ${{ steps.cache-pip.outputs.cache-hit }}"
+          echo "playwright cache hit = ${{ steps.cache-playwright.outputs.cache-hit }}"
+
+      - name: Install uv (astral-sh)
         uses: astral-sh/setup-uv@v3
         with:
           enable-cache: true
 
-      - name: Set up virtual environment
-        run: uv sync --all-groups 
+      - name: Sync dependencies (time measurement)
+        run: |
+          echo "=== uv sync start ==="
+          time uv sync --all-groups
+          echo "=== uv sync done ==="
 
-      - name: Run the app
+      # Install Playwright browsers only if cache miss
+      - name: Install Playwright browsers (if cache miss)
+        if: ${{ steps.cache-playwright.outputs.cache-hit != 'true' }}
+        run: uv run playwright install
+
+      - name: Start app and wait for readiness
         run: |
           uv run uvicorn src.screenshotAgent:app --port 9910 &
-          sleep 10
+          for i in $(seq 1 30); do
+            if curl -sSf http://localhost:9910/openapi.json >/dev/null 2>&1; then
+              echo "ready"
+              break
+            fi
+            echo "waiting for app... ($i)"
+            sleep 1
+          done
 
       - name: Smoke tests
-        run: curl http://localhost:9910/openapi.json -o openapi.json
+        run: curl -sSf http://localhost:9910/openapi.json -o openapi.json
 
       - name: Run tests
         run: |
-          uv run playwright install
           PYTHONPATH=$PWD uv run pytest tests
