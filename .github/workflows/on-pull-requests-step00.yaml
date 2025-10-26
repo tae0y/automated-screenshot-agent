@@ -19,6 +19,15 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Cache pip and venv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            .venv
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.lock','**/requirements.txt') }}
+          restore-keys: ${{ runner.os }}-pip-
+
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         with:
