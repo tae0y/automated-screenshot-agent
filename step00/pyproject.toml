@@ -9,3 +9,9 @@ dependencies = [
     "playwright>=1.55.0",
     "uvicorn>=0.38.0",
 ]
+
+[dependency-groups]
+test = [
+    "httpx>=0.28.1",
+    "pytest>=8.4.2",
+]

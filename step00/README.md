@@ -35,3 +35,8 @@
     ```
 
 1. /docs Swagger 화면에 접속해 확인해봅시다.
+
+1. 테스트는 아래와 같이 실행합니다.
+   ```bash
+   PYTHONPATH=$PWD pytest
+   ```
