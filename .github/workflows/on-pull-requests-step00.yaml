@@ -26,15 +26,12 @@ jobs:
       - name: Set up virtual environment
         run: uv sync
 
+      # smoke tests
       - name: Run smoke tests
-        run: uv run uvicorn src.screenshotAgent:app --port 9910
-
-      - name: Wait for a few seconds to let the server start
-        run: sleep 10
-
-      # smoke test
-      - name: Download docs json from the running server
-        run: curl http://localhost:9910/openapi.json -o openapi.json 
+        run: |
+          uv run uvicorn src.screenshotAgent:app --port 9910 &
+          sleep 10
+          curl http://localhost:9910/openapi.json -o openapi.json
 
       # unit, integration tests
       - name: Run tests
