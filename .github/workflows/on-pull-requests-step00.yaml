@@ -10,7 +10,9 @@ on:
 jobs:
   step00:
     runs-on: ubuntu-latest
-    working-directory: ./step00
+    defaults:
+      run:
+        working-directory: ./step00
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
