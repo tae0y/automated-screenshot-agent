@@ -69,22 +69,22 @@ async def post_screenshot(request: ScreenshotRequest = Body(...)):
 
     if not request.systemNm:
         _logger.debug("No systemNm provided, processing all URLs.")
-        requested_urls = _config.URLS
-        passed_urls, failed_urls = capture_all(requested_urls)
+        requested_urlinfos = _config.URLS
+        passed_urlinfos, failed_urlinfos = await capture_all(requested_urlinfos)
     else:
         _logger.debug(f"Processing URLs for systemNm={request.systemNm}.")
-        requested_url = next((u.url for u in _config.URLS if u.name == request.systemNm), None)
-        if not requested_url:
+        requested_urlinfo = next((u for u in _config.URLS if u.name == request.systemNm), None)
+        if not requested_urlinfo:
             raise ValueError(f"No URLs found for systemNm={request.systemNm}")
-        is_success = capture_one(requested_url)
-        requested_urls = [requested_url]
-        passed_urls = [requested_url] if is_success else []
-        failed_urls = [] if is_success else [requested_url]
+        is_success = await capture_one(requested_urlinfo)
+        requested_urlinfos = [requested_urlinfo]
+        passed_urlinfos = [requested_urlinfo] if is_success else []
+        failed_urlinfos = [] if is_success else [requested_urlinfo]
 
     result_data = ScreenshotResultData(
-        requestedUrls=requested_urls,
-        passedUrls=passed_urls,
-        failedUrls=failed_urls
+        requestedUrls=requested_urlinfos,
+        passedUrls=passed_urlinfos,
+        failedUrls=failed_urlinfos
     )
     return ScreenshotResponse(
         resultCd=ResultCode.SUCCESS,

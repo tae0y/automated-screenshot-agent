@@ -31,7 +31,7 @@
 
 1. 앱을 실행합니다.
     ```bash
-    uv run uvicorn src.screenshotAgent:app --reload --port 9910
+    uv run --active uvicorn src.screenshotAgent:app --reload --port 9910
     ```
 
 1. /docs Swagger 화면에 접속해 확인해봅시다.

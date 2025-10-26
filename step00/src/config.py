@@ -30,6 +30,10 @@ class ConfigManager:
     @property
     def TIMEOUT(self):
         return self._config.getint("SCREENSHOT", "TIMEOUT", fallback=30)
+    
+    @property
+    def SAVE_PATH(self):
+        return self._config.get("SCREENSHOT", "SAVE_PATH", fallback="./data/screenshots/")
 
     def __new__(cls):
         if cls._instance is None:
