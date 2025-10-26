@@ -1,0 +1,40 @@
+name: when-pr-submitted
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'step00/**'
+      - '.github/workflows/on-pull-requests-step00.yaml'
+
+jobs:
+  step00:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Change directory to step00
+        run: cd ./step00/
+      
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Set up virtual environment
+        run: uv sync
+
+      - name: Run smoke tests
+        run: uv run uvicorn src.screenshotAgent:app --port 9910
+
+      - name: Wait for a few seconds to let the server start
+        run: sleep 10
+
+      # smoke test
+      - name: Download docs json from the running server
+        run: curl http://localhost:9910/openapi.json -o openapi.json 
+
+      # unit, integration tests
+      - name: Run tests
+        run: PYTHONPATH=$PWD pytest
