@@ -30,23 +30,28 @@ def test_given_valid_url_when_is_valid_url_invoked_then_should_return_true(
 
 
 @pytest.mark.asyncio
-async def test_given_invalid_urlinfo_when_capture_one_invoked_then_should_throw(
-    urlinfo_dict
-):
+async def test_given_invalid_urlinfo_when_capture_one_invoked_then_should_throw():
+    invalid_urlinfo_dict = {"name": INVALID_NAME, "url": next(iter(INVALID_URLS))}
     with pytest.raises((ValueError, Exception)):
-        urlinfo = UrlInfo(**urlinfo_dict)
+        urlinfo = UrlInfo(**invalid_urlinfo_dict)
         await capture_one(urlinfo)
 
 
 @pytest.mark.asyncio
-async def test_given_invalid_urlinfos_when_capture_all_invoked_then_should_throw(
-    urlinfos_dict
-):
-    with pytest.raises((ValueError, Exception)):
-        urlinfos = [
-            UrlInfo(**x) if isinstance(x, dict) else x for x in urlinfos_dict
-        ]
-        await capture_all(urlinfos)
+async def test_given_invalid_urlinfos_when_capture_all_invoked_then_should_throw():
+    invalid_urlinfo_dict_list = [
+        {"name": INVALID_NAME, "url": invalid_url} for invalid_url in INVALID_URLS
+    ]
+    # 빈 문자열에 대해서만 ValidationError 발생 확인
+    with pytest.raises(Exception):
+        UrlInfo(name=INVALID_NAME, url="")
+
+    # 나머지 invalid url들은 객체 생성 후 capture_all에서 실패하는지 검증
+    filtered_invalids = [url for url in INVALID_URLS if url != ""]
+    urlinfos = [UrlInfo(name=INVALID_NAME, url=url) for url in filtered_invalids]
+    passed, failed = await capture_all(urlinfos)
+    assert len(passed) == 0
+    assert len(failed) == len(filtered_invalids)
 
 
 @pytest.mark.asyncio
