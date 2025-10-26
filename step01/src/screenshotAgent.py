@@ -15,6 +15,8 @@ from src.models import (
     ScreenshotPostRequest,
     ScreenshotPostResponse,
     ScreenshotPostResultData,
+    MCPScreenshotPostRequest,
+    MCPScreenshotPostResponse,
     ResultCode,
 )
 
@@ -125,6 +127,41 @@ async def post_screenshot(request: ScreenshotPostRequest = Body(...)):
         requested_urlinfos = [requested_urlinfo]
         passed_urlinfos = [requested_urlinfo] if is_success else []
         failed_urlinfos = [] if is_success else [requested_urlinfo]
+
+    result_data = ScreenshotPostResultData(
+        requestedUrls=requested_urlinfos,
+        passedUrls=passed_urlinfos,
+        failedUrls=failed_urlinfos
+    )
+    return ScreenshotPostResponse(
+        resultCd=ResultCode.SUCCESS,
+        resultMsg="Success",
+        data=result_data
+    )
+
+
+@app.post("/api/v1/mcp/screenshot", response_model=MCPScreenshotPostResponse)
+async def post_mcp_screenshot(request: MCPScreenshotPostRequest = Body(...)):
+    """
+    Post Screenshot
+
+    - param
+        - request: ScreenshotRequest
+        - if not provided, all URLs will be processed
+    - return
+        - ScreenshotResponse
+    """
+    _logger.info(f"POST /screenshot called with request={request}")
+
+    if not request.prompt:
+        _logger.error("Prompt not provided.")
+        raise ValueError("Prompt is required for MCP screenshot request.")
+    else:
+        # TODO: implement MCP screenshot capture
+        is_success = True
+        requested_urlinfos = []
+        passed_urlinfos = []
+        failed_urlinfos = []
 
     result_data = ScreenshotPostResultData(
         requestedUrls=requested_urlinfos,

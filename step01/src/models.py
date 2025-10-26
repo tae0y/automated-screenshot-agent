@@ -83,3 +83,17 @@ class ScreenshotPostResponse(BaseResponse):
     Screenshot Response Model
     """
     data: Optional[ScreenshotPostResultData] = None
+
+
+class MCPScreenshotPostRequest(BaseRequest):
+    """
+    MCP Screenshot Request Model
+    """
+    prompt: str
+
+
+class MCPScreenshotPostResponse(BaseResponse):
+    """
+    MCP Screenshot Response Model
+    """
+    data: Optional[ScreenshotPostResultData] = None
