@@ -38,7 +38,7 @@ async def lifespan(app):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.get("/screenshot", response_model=ScreenshotGetResponse)
+@app.get("/api/v1/predefined/screenshot", response_model=ScreenshotGetResponse)
 async def get_screenshot(systemNm: str = Query(None)):
     """
     Get Screenshot
@@ -96,7 +96,7 @@ async def get_screenshot(systemNm: str = Query(None)):
     )
 
 
-@app.post("/screenshot", response_model=ScreenshotPostResponse)
+@app.post("/api/v1/predefined/screenshot", response_model=ScreenshotPostResponse)
 async def post_screenshot(request: ScreenshotPostRequest = Body(...)):
     """
     Post Screenshot
