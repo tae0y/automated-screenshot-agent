@@ -1,9 +1,8 @@
-
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
-# Custom Types
+
 class UrlInfo(BaseModel):
     """
     URL Information Model
@@ -23,9 +22,17 @@ class ScreenshotPostResultData(BaseModel):
     failedUrls: List[UrlInfo]
 
     def __init__(self, requestedUrls, passedUrls, failedUrls, **kwargs):
-        requestedUrls = [requestedUrls] if not isinstance(requestedUrls, list) else requestedUrls
-        passedUrls = [passedUrls] if not isinstance(passedUrls, list) else passedUrls
-        failedUrls = [failedUrls] if not isinstance(failedUrls, list) else failedUrls
+        requestedUrls = (
+            [requestedUrls]
+            if not isinstance(requestedUrls, list)
+            else requestedUrls
+        )
+        passedUrls = (
+            [passedUrls] if not isinstance(passedUrls, list) else passedUrls
+        )
+        failedUrls = (
+            [failedUrls] if not isinstance(failedUrls, list) else failedUrls
+        )
         super().__init__(
             requestedUrls=requestedUrls,
             passedUrls=passedUrls,
@@ -41,7 +48,6 @@ class ResultCode(Enum):
     EXTERNAL_ERROR = 920
 
 
-# Custom Base Models
 class BaseRequest(BaseModel):
     """
     Base Request Model
@@ -58,7 +64,6 @@ class BaseResponse(BaseModel):
     data: Optional[BaseModel] = None
 
 
-# Inherited Models
 class ScreenshotGetResponse(BaseResponse):
     """
     Screenshot Response Model

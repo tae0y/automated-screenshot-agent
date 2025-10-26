@@ -9,7 +9,14 @@ from fastapi import FastAPI, Body, Query
 from src.capture import capture_all, capture_one
 from src.config import ConfigManager
 from src.logger import get_logger
-from src.models import ScreenshotGetResponse, ScreenshotGetResultData, ScreenshotPostRequest, ScreenshotPostResponse, ScreenshotPostResultData, ResultCode
+from src.models import (
+    ScreenshotGetResponse,
+    ScreenshotGetResultData,
+    ScreenshotPostRequest,
+    ScreenshotPostResponse,
+    ScreenshotPostResultData,
+    ResultCode,
+)
 
 
 _config = ConfigManager()
@@ -19,24 +26,10 @@ _logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app):
     # Startup logic
-    _logger.info("""
-
-    ███████╗ ██████╗██████╗ ███████╗███████╗███╗   ██╗███████╗██╗  ██╗ ██████╗ ████████╗
-    ██╔════╝██╔════╝██╔══██╗██╔════╝██╔════╝████╗  ██║██╔════╝██║  ██║██╔═══██╗╚══██╔══╝
-    ███████╗██║     ██████╔╝█████╗  █████╗  ██╔██╗ ██║███████╗███████║██║   ██║   ██║
-    ╚════██║██║     ██╔══██╗██╔══╝  ██╔══╝  ██║╚██╗██║╚════██║██╔══██║██║   ██║   ██║
-    ███████║╚██████╗██║  ██║███████╗███████╗██║ ╚████║███████║██║  ██║╚██████╔╝   ██║
-    ╚══════╝ ╚═════╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝    ╚═╝
-
-     █████╗  ██████╗ ███████╗███╗   ██╗████████╗
-    ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝
-    ███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║
-    ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║
-    ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║
-    ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝
-
-    Now starting the Automated Screenshot Agent...
-    """)
+    banner_path = os.path.join(os.path.dirname(__file__), "banner.txt")
+    with open(banner_path, encoding="utf-8") as f:
+        banner = f.read()
+    _logger.info(banner)
     yield
     # Shutdown logic
     _logger.info("\n\nAutomated Screenshot Agent is shutting down...\n\n")
@@ -118,10 +111,14 @@ async def post_screenshot(request: ScreenshotPostRequest = Body(...)):
     if not request.systemNm:
         _logger.debug("No systemNm provided, processing all URLs.")
         requested_urlinfos = _config.URLS
-        passed_urlinfos, failed_urlinfos = await capture_all(requested_urlinfos)
+        passed_urlinfos, failed_urlinfos = await capture_all(
+            requested_urlinfos
+        )
     else:
         _logger.debug(f"Processing URLs for systemNm={request.systemNm}.")
-        requested_urlinfo = next((u for u in _config.URLS if u.name == request.systemNm), None)
+        requested_urlinfo = next(
+            (u for u in _config.URLS if u.name == request.systemNm), None
+        )
         if not requested_urlinfo:
             raise ValueError(f"No URLs found for systemNm={request.systemNm}")
         is_success = await capture_one(requested_urlinfo)

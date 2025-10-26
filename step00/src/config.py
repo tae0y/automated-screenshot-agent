@@ -8,7 +8,6 @@ from src.logger import get_logger
 logger = get_logger(__name__, level=logging.DEBUG)
 
 
-
 class ConfigManager:
     _instance = None
     CONFIG_FILE = "config.ini"
@@ -28,15 +27,19 @@ class ConfigManager:
 
     @property
     def IMG_MAX_WIDTH(self):
-        return self._config.getint("SCREENSHOT", "IMG_MAX_WIDTH", fallback=1280)
+        return self._config.getint(
+            "SCREENSHOT", "IMG_MAX_WIDTH", fallback=1280
+        )
 
     @property
     def TIMEOUT(self):
         return self._config.getint("SCREENSHOT", "TIMEOUT", fallback=30)
-    
+
     @property
     def SAVE_PATH(self):
-        return self._config.get("SCREENSHOT", "SAVE_PATH", fallback="./data/screenshots/")
+        return self._config.get(
+            "SCREENSHOT", "SAVE_PATH", fallback="./data/screenshots/"
+        )
 
     def __new__(cls):
         if cls._instance is None:
@@ -61,14 +64,20 @@ class ConfigManager:
             with open(sample_file_path, 'r') as sample_file:
                 with open(config_file_path, 'w') as config_file:
                     config_file.write(sample_file.read())
-                    logger.info(f"Configuration from {sample_file_path} copied to {config_file_path}.")
+                    msg = (
+                        f"Configuration from {sample_file_path} copied to "
+                        f"{config_file_path}."
+                    )
+                    logger.info(msg)
         # Parse the configuration file
         try:
             _config.read(config_file_path)
             self._config = _config
-            logger.info(f"Configuration from {config_file_path} loaded successfully.")
+            msg = f"Configuration from {config_file_path} loaded successfully."
+            logger.info(msg)
         except Exception as e:
-            logger.error(f"Error loading configuration from {config_file_path}: {e}")
+            msg = f"Error loading configuration from {config_file_path}: {e}"
+            logger.error(msg)
             raise
 
     def reload(self):

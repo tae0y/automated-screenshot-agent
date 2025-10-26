@@ -1,7 +1,6 @@
 import logging
 import os
 from logging import handlers
-from uvicorn.logging import DefaultFormatter
 
 LOG_DIR = "logs"
 LOG_FILE = os.path.join(LOG_DIR, "app.log")

@@ -15,27 +15,43 @@ ERROR_RESULT_CD = 910
 client = TestClient(app)
 
 
-@pytest.mark.parametrize("systemNm,expected_cd,expected_msg", [
-    (INVALID_SYSTEM_NM, ERROR_RESULT_CD, "systemNm query parameter is required"),
-])
-def test_given_invalid_systemNm_when_get_screenshot_invoked_then_should_return_error(systemNm, expected_cd, expected_msg):
+@pytest.mark.parametrize(
+    "systemNm,expected_cd,expected_msg",
+    [
+        (
+            INVALID_SYSTEM_NM,
+            ERROR_RESULT_CD,
+            "systemNm query parameter is required"
+        ),
+    ]
+)
+def test_given_invalid_systemNm_when_get_screenshot_invoked_then_should_return_error(
+    systemNm, expected_cd, expected_msg
+):
     response = client.get("/screenshot")
     assert response.status_code == 200
     assert response.json()["resultCd"] == expected_cd
     assert expected_msg in response.json()["resultMsg"]
 
 
-@pytest.mark.parametrize("systemNm,expected_cd,expected_msg", [
-    (NONEXISTENT_SYSTEM_NM, ERROR_RESULT_CD, "No URLs found for systemNm"),
-])
-def test_given_nonexistent_systemNm_when_get_screenshot_invoked_then_should_return_error(systemNm, expected_cd, expected_msg):
+@pytest.mark.parametrize(
+    "systemNm,expected_cd,expected_msg",
+    [
+        (NONEXISTENT_SYSTEM_NM, ERROR_RESULT_CD, "No URLs found for systemNm"),
+    ]
+)
+def test_given_nonexistent_systemNm_when_get_screenshot_invoked_then_should_return_error(
+    systemNm, expected_cd, expected_msg
+):
     response = client.get(f"/screenshot?systemNm={systemNm}")
     assert response.status_code == 200
     assert response.json()["resultCd"] == expected_cd
     assert expected_msg in response.json()["resultMsg"]
 
 
-def test_given_valid_systemNm_when_get_screenshot_invoked_then_should_return_success(monkeypatch):
+def test_given_valid_systemNm_when_get_screenshot_invoked_then_should_return_success(
+    monkeypatch
+):
     with tempfile.TemporaryDirectory() as tmpdir:
         systemNm = "TestSystem"
         # 테스트용 스크린샷 파일 생성
@@ -44,7 +60,11 @@ def test_given_valid_systemNm_when_get_screenshot_invoked_then_should_return_suc
         with open(image_path, "wb") as f:
             f.write(b"fake image data")
         # monkeypatch로 URLS, SAVE_PATH 주입
-        monkeypatch.setattr(ConfigManager, "URLS", [UrlInfo(name=systemNm, url="http://example.com")])
+        monkeypatch.setattr(
+            ConfigManager,
+            "URLS",
+            [UrlInfo(name=systemNm, url="http://example.com")],
+        )
         monkeypatch.setattr(ConfigManager, "SAVE_PATH", tmpdir)
         response = client.get(f"/screenshot?systemNm={systemNm}")
         assert response.status_code == 200
@@ -52,18 +72,29 @@ def test_given_valid_systemNm_when_get_screenshot_invoked_then_should_return_suc
         assert "imagePath" in response.json()["data"]
 
 
-@pytest.mark.parametrize("payload,expected_cd", [
-    ({}, SUCCESS_RESULT_CD),
-])
-def test_given_invalid_systemNm_when_post_screenshot_invoked_then_should_return_success(payload, expected_cd):
+@pytest.mark.parametrize(
+    "payload,expected_cd",
+    [
+        ({}, SUCCESS_RESULT_CD),
+    ]
+)
+def test_given_invalid_systemNm_when_post_screenshot_invoked_then_should_return_success(
+    payload, expected_cd
+):
     response = client.post("/screenshot", json=payload)
     assert response.status_code == 200
     assert response.json()["resultCd"] == expected_cd
 
 
-def test_given_valid_systemNm_when_post_screenshot_invoked_then_should_return_success(monkeypatch):
+def test_given_valid_systemNm_when_post_screenshot_invoked_then_should_return_success(
+    monkeypatch
+):
     systemNm = "TestSystem"
-    monkeypatch.setattr(ConfigManager, "URLS", [UrlInfo(name=systemNm, url="https://example.com")])
+    monkeypatch.setattr(
+        ConfigManager,
+        "URLS",
+        [UrlInfo(name=systemNm, url="https://example.com")],
+    )
     response = client.post("/screenshot", json={"systemNm": systemNm})
     assert response.status_code == 200
     assert response.json()["resultCd"] == SUCCESS_RESULT_CD

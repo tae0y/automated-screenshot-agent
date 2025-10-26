@@ -1,6 +1,8 @@
 import pytest
 from pydantic import ValidationError
-from src.models import UrlInfo, ScreenshotGetResultData, ScreenshotPostResultData, ResultCode
+from src.models import (
+    UrlInfo, ScreenshotGetResultData, ScreenshotPostResultData, ResultCode
+)
 
 VALID_NAME = "Google"
 VALID_URL = "https://google.com"
@@ -58,7 +60,9 @@ def test_given_screenshotgetresultdata_none_or_blank(systemNm, imagePath):
     (VALID_SYSTEM_NM, VALID_IMAGE_PATH),
     ("AnotherSystem", "/tmp/another.png"),
 ])
-def test_given_valid_screenshotgetresultdata_when_created_then_should_succeed(systemNm, imagePath):
+def test_given_valid_screenshotgetresultdata_when_created_then_should_succeed(
+    systemNm, imagePath
+):
     data = ScreenshotGetResultData(systemNm=systemNm, imagePath=imagePath)
     assert data.systemNm == systemNm
     assert data.imagePath == imagePath
@@ -73,12 +77,21 @@ def test_given_valid_screenshotgetresultdata_when_created_then_should_succeed(sy
     ([], None, []),
     ([], [], None),
 ])
-def test_given_screenshotpostresultdata_none_or_blank(requestedUrls, passedUrls, failedUrls):
+def test_given_screenshotpostresultdata_none_or_blank(
+    requestedUrls, passedUrls, failedUrls
+):
     # None은 허용, 리스트 내 공백 문자열은 예외 발생
     def has_blank_urlinfo(lst):
         if lst is None:
             return False
-        return any((x is not None and (x.get("name", None) == "" or x.get("url", None) == "")) for x in lst)
+        return any(
+            (
+                x is not None and (
+                    x.get("name", None) == "" or x.get("url", None) == ""
+                )
+            )
+            for x in lst
+        )
 
     def to_urlinfo_list(lst):
         if lst is None:
@@ -91,7 +104,12 @@ def test_given_screenshotpostresultdata_none_or_blank(requestedUrls, passedUrls,
                 result.append(x)  # ValidationError 발생 시 그대로 dict로 남김
         return result
 
-    if requestedUrls is None or passedUrls is None or failedUrls is None or has_blank_urlinfo(requestedUrls):
+    if (
+        requestedUrls is None
+        or passedUrls is None
+        or failedUrls is None
+        or has_blank_urlinfo(requestedUrls)
+    ):
         with pytest.raises(ValidationError):
             requestedObjs = []
             if requestedUrls is not None:
@@ -105,25 +123,41 @@ def test_given_screenshotpostresultdata_none_or_blank(requestedUrls, passedUrls,
             if failedUrls is not None:
                 for x in failedUrls:
                     failedObjs.append(UrlInfo(**x))
-            ScreenshotPostResultData(requestedUrls=requestedObjs if requestedUrls is not None else None,
-                                    passedUrls=passedObjs if passedUrls is not None else None,
-                                    failedUrls=failedObjs if failedUrls is not None else None)
+            ScreenshotPostResultData(
+                requestedUrls=requestedObjs if requestedUrls is not None else None,
+                passedUrls=passedObjs if passedUrls is not None else None,
+                failedUrls=failedObjs if failedUrls is not None else None
+            )
     else:
         requestedObjs = to_urlinfo_list(requestedUrls)
         passedObjs = to_urlinfo_list(passedUrls)
         failedObjs = to_urlinfo_list(failedUrls)
-        data = ScreenshotPostResultData(requestedUrls=requestedObjs, passedUrls=passedObjs, failedUrls=failedObjs)
+        data = ScreenshotPostResultData(
+            requestedUrls=requestedObjs,
+            passedUrls=passedObjs,
+            failedUrls=failedObjs
+        )
         assert data.requestedUrls == requestedObjs
         assert data.passedUrls == passedObjs
         assert data.failedUrls == failedObjs
 
 
-@pytest.mark.parametrize("requestedUrls,passedUrls,failedUrls", [
-    ([UrlInfo(name=VALID_NAME, url=VALID_URL), UrlInfo(name=VALID_NAME2, url=VALID_URL2)],
-     [UrlInfo(name=VALID_NAME, url=VALID_URL)],
-     [UrlInfo(name=VALID_NAME2, url=VALID_URL2)]),
-])
-def test_given_valid_screenshotpostresultdata_when_created_then_should_succeed(requestedUrls, passedUrls, failedUrls):
+@pytest.mark.parametrize(
+    "requestedUrls,passedUrls,failedUrls",
+    [
+        (
+            [
+                UrlInfo(name=VALID_NAME, url=VALID_URL),
+                UrlInfo(name=VALID_NAME2, url=VALID_URL2)
+            ],
+            [UrlInfo(name=VALID_NAME, url=VALID_URL)],
+            [UrlInfo(name=VALID_NAME2, url=VALID_URL2)]
+        ),
+    ]
+)
+def test_given_valid_screenshotpostresultdata_when_created_then_should_succeed(
+    requestedUrls, passedUrls, failedUrls
+):
     data = ScreenshotPostResultData(
         requestedUrls=requestedUrls,
         passedUrls=passedUrls,
@@ -134,7 +168,8 @@ def test_given_valid_screenshotpostresultdata_when_created_then_should_succeed(r
     assert len(data.failedUrls) == len(failedUrls)
 
 
-def test_given_resultcode_enum_when_accessed_then_should_return_expected_values():
+def test_given_resultcode_enum_when_accessed_then_should_return_expected_values(
+):
     assert ResultCode.SUCCESS.value == 100
     assert ResultCode.FAIL.value == 900
     assert ResultCode.INTERNAL_ERROR.value == 910

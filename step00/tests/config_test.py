@@ -7,13 +7,22 @@ DEFAULT_IMG_MAX_WIDTH = 1280
 DEFAULT_TIMEOUT = 30
 
 
-def test_given_missing_config_when_configmanager_created_then_should_create_from_sample(tmp_path):
+def test_given_missing_config_when_configmanager_created_then_should_create_from_sample(
+    tmp_path
+):
     """
     config.ini가 없을 때 sample 파일을 복사하여 생성하는지 확인
     """
     config_file = tmp_path / "config.ini"
     sample_file = tmp_path / "config.sample.ini"
-    sample_file.write_text("[SCREENSHOT]\nSAVE_PATH=./data/screenshots/\nWEBP_QUALITY=80\nIMG_MAX_WIDTH=1024\nTIMEOUT=10\n")
+    sample_text = (
+        "[SCREENSHOT]\n"
+        "SAVE_PATH=./data/screenshots/\n"
+        "WEBP_QUALITY=80\n"
+        "IMG_MAX_WIDTH=1024\n"
+        "TIMEOUT=10\n"
+    )
+    sample_file.write_text(sample_text)
     # 실제 파일 경로를 임시로 변경하여 테스트
     import src.config
     src.config.ConfigManager.CONFIG_FILE = str(config_file)
@@ -33,7 +42,9 @@ def test_given_configmanager_when_reload_invoked_then_should_reload():
     assert hasattr(manager, "_config")
 
 
-def test_given_invalid_config_when_property_accessed_then_should_fallback(tmp_path):
+def test_given_invalid_config_when_property_accessed_then_should_fallback(
+    tmp_path
+):
     import src.config
     src.config.ConfigManager._instance = None  # 싱글턴 초기화
     """
@@ -49,7 +60,8 @@ def test_given_invalid_config_when_property_accessed_then_should_fallback(tmp_pa
     assert manager.TIMEOUT == DEFAULT_TIMEOUT
 
 
-def test_given_valid_config_when_properties_accessed_then_should_return_expected():
+def test_given_valid_config_when_properties_accessed_then_should_return_expected(
+):
     manager = ConfigManager()
     assert isinstance(manager.SAVE_PATH, str)
     assert isinstance(manager.WEBP_QUALITY, int)

@@ -52,7 +52,8 @@ async def capture_one(urlinfo: UrlInfo) -> bool:
             try:
                 await page.goto(urlinfo.url, wait_until="networkidle")
             except Exception as e:
-                _logger.warning(f"Network idle not reached for {urlinfo.url}: {e}")
+                msg = f"Network idle not reached for {urlinfo.url}: {e}"
+                _logger.warning(msg)
                 await page.goto(urlinfo.url)  # 강제 캡처를 위해 재시도
 
             timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -62,13 +63,16 @@ async def capture_one(urlinfo: UrlInfo) -> bool:
             await browser.close()
         is_success = True
     except Exception as e:
-        _logger.error(f"Error occurred while capturing {urlinfo.url}: {e}")
+        msg = f"Error occurred while capturing {urlinfo.url}: {e}"
+        _logger.error(msg)
         is_success = False
 
     return is_success
 
 
-async def capture_all(urlinfos: list[UrlInfo]) -> tuple[list[UrlInfo], list[UrlInfo]]:
+async def capture_all(
+    urlinfos: list[UrlInfo],
+) -> tuple[list[UrlInfo], list[UrlInfo]]:
     """
     스크린샷 캡처 여러건
     - param
@@ -93,7 +97,8 @@ async def capture_all(urlinfos: list[UrlInfo]) -> tuple[list[UrlInfo], list[UrlI
 
     for urlinfo, result in zip(urlinfos, results):
         if isinstance(result, Exception):
-            _logger.error(f"Error occurred while capturing {urlinfo.url}: {result}")
+            msg = f"Error occurred while capturing {urlinfo.url}: {result}"
+            _logger.error(msg)
             failed_url.append(urlinfo)
         elif result:
             passed_url.append(urlinfo)
