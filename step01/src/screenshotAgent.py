@@ -147,8 +147,7 @@ async def post_mcp_screenshot(request: MCPScreenshotPostRequest = Body(...)):
     Post Screenshot
 
     - param
-        - request: ScreenshotRequest
-        - if not provided, all URLs will be processed
+        - request: MCPScreenshotPostRequest
     - return
         - ScreenshotResponse
     """
@@ -157,12 +156,12 @@ async def post_mcp_screenshot(request: MCPScreenshotPostRequest = Body(...)):
     if not request.prompt:
         _logger.error("Prompt not provided.")
         raise ValueError("Prompt is required for MCP screenshot request.")
-    else:
-        # TODO: implement MCP screenshot capture
-        is_success = process_prompt(prompt=request.prompt)
-        requested_urlinfos = []
-        passed_urlinfos = []
-        failed_urlinfos = []
+    
+    # TODO: implement MCP screenshot capture
+    is_success = process_prompt(prompt=request.prompt)
+    requested_urlinfos = []
+    passed_urlinfos = []
+    failed_urlinfos = []
 
     result_data = ScreenshotPostResultData(
         requestedUrls=requested_urlinfos,
