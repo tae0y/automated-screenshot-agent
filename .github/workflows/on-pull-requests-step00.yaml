@@ -34,7 +34,7 @@ jobs:
             ${{ github.workspace }}/step00/.venv
             ${{ github.workspace }}/step00/.cache/pip
             ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('step00/pyproject.lock','step00/requirements.txt','step00/poetry.lock') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('step00/pyproject.toml','step00/requirements.txt','step00/poetry.lock') }}
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Cache Playwright browsers
@@ -42,7 +42,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/step00/.playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('step00/pyproject.lock','step00/requirements.txt','step00/poetry.lock') }}
+          key: ${{ runner.os }}-playwright-${{ hashFiles('step00/pyproject.toml','step00/requirements.txt','step00/poetry.lock') }}
           restore-keys: ${{ runner.os }}-playwright-
 
       - name: Restore uv cache
