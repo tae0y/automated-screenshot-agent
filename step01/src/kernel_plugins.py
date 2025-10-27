@@ -5,6 +5,8 @@ import base64
 import os
 import uuid
 
+from bs4 import BeautifulSoup
+
 from typing import Annotated, Optional
 
 from playwright.async_api import async_playwright
@@ -12,11 +14,10 @@ from playwright.async_api import async_playwright
 from semantic_kernel.functions import kernel_function
 
 
-class PlaywrightPlugin:
+class WebNavigationPlugin:
     def __init__(self):
         self._sessions = {}
         self._playwright = None
-
 
     @kernel_function(description="Create a new browser session")
     async def new_session(self, url: Optional[str] = None) -> Annotated[str, "Session creation result"]:
@@ -150,3 +151,30 @@ class PlaywrightPlugin:
             return f"HTML content of element with selector {selector}: {html_content}"
         except Exception as e:
             return f"Get HTML content failed: {e}"
+
+    @kernel_function(description="Get visible HTML from a URL (body only)")
+    async def get_visible_html(self, url: str) -> Annotated[str, "Visible HTML content"]:
+        try:
+            playwright = await async_playwright().start()
+            browser = await playwright.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await page.goto(url)
+            visible_html = await page.evaluate("document.body.innerHTML")
+            await browser.close()
+            await playwright.stop()
+            return visible_html
+        except Exception as e:
+            return f"Failed to get visible HTML: {e}"
+
+    @kernel_function(description="Clean HTML by removing unnecessary tags (span, style, script, etc)")
+    async def clean_html(self, html: str) -> Annotated[str, "Cleaned HTML content"]:
+        try:
+            soup = BeautifulSoup(html, "html.parser")
+            for tag in soup(["span", "style", "script", "noscript", "meta", "link"]):
+                tag.decompose()
+            cleaned_html = str(soup)
+            return cleaned_html
+        except Exception as e:
+            return f"Failed to clean HTML: {e}"
+
+# TODO: custom.py에 정의된 커스텀 login, logout 함수를 호출, 컨텍스트를 안전하게 공유하기

@@ -2,7 +2,7 @@ from semantic_kernel.agents import ChatCompletionAgent
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
 
 from src.config import ConfigManager
-from src.kernel_plugins import PlaywrightPlugin
+from src.kernel_plugins import WebNavigationPlugin
 
 _config = ConfigManager()
 
@@ -24,7 +24,7 @@ class KernelAgent:
             ),
             name="SK-Assistant",
             instructions="You are a helpful assistant.",
-            plugins=[PlaywrightPlugin()],
+            plugins=[WebNavigationPlugin()],
         )
 
     async def get_response(self, messages):
