@@ -9,7 +9,7 @@ if not os.path.exists(LOG_DIR):
 
 # 로그 포맷터
 formatter = logging.Formatter(
-    "%(asctime)s\t[%(levelname)s]\t\t%(message)s"
+    "%(asctime)s\t[%(levelname)s] \t%(name)s\t: %(message)s"
 )
 
 # 로그파일 핸들러
