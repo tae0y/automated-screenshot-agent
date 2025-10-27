@@ -1,21 +1,21 @@
-name: on-pull-requests-step00
+name: on-pull-requests-step01
 on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - 'step00/**'
-      - '.github/workflows/on-pull-requests-step00.yaml'
+      - 'step01/**'
+      - '.github/workflows/on-pull-requests-step01.yaml'
 
 jobs:
-  step00:
+  step01:
     runs-on: ubuntu-latest
     env:
       UV_CACHE_DIR: /tmp/.uv-cache
-      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/step00/.playwright
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/step01/.playwright
     defaults:
       run:
-        working-directory: ./step00
+        working-directory: ./step01
 
     steps:
       - name: Checkout
@@ -31,18 +31,18 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ github.workspace }}/step00/.venv
-            ${{ github.workspace }}/step00/.cache/pip
+            ${{ github.workspace }}/step01/.venv
+            ${{ github.workspace }}/step01/.cache/pip
             ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('step00/pyproject.toml','step00/requirements.txt','step00/poetry.lock') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('step01/pyproject.toml','step01/requirements.txt','step01/poetry.lock') }}
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Cache Playwright browsers
         id: cache-playwright
         uses: actions/cache@v4
         with:
-          path: ${{ github.workspace }}/step00/.playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('step00/pyproject.toml','step00/requirements.txt','step00/poetry.lock') }}
+          path: ${{ github.workspace }}/step01/.playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('step01/pyproject.toml','step01/requirements.txt','step01/poetry.lock') }}
           restore-keys: ${{ runner.os }}-playwright-
 
       - name: Restore uv cache
@@ -50,9 +50,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /tmp/.uv-cache
-          key: uv-${{ runner.os }}-${{ hashFiles('step00/uv.lock') }}
+          key: uv-${{ runner.os }}-${{ hashFiles('step01/uv.lock') }}
           restore-keys: |
-            uv-${{ runner.os }}-${{ hashFiles('step00/uv.lock') }}
+            uv-${{ runner.os }}-${{ hashFiles('step01/uv.lock') }}
             uv-${{ runner.os }}
 
       - name: Show cache status
