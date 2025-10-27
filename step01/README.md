@@ -94,7 +94,7 @@
     # Windows/cmd
     set UV_PROJECT_ENVIRONMENT=.step01
     uv sync --group dev
-    start "uvicorn" uv run --active uvicorn src.screenshotAgent:app--reload --port 9910
+    start "uvicorn" uv run --active uvicorn src.screenshotAgent:app --reload --port 9910
     timeout /t 3 >nul
     curl http://localhost:9910/openapi.json -o openapi.json
     taskkill /IM uvicorn.exe /F
