@@ -40,6 +40,18 @@ class ConfigManager:
         return self._config.get(
             "SCREENSHOT", "SAVE_PATH", fallback="./data/screenshots/"
         )
+        
+    @property
+    def AZURE_AI_FOUNDRY_API_KEY(self):
+        return self._config.get("KERNEL", "AZURE_AI_FOUNDRY_API_KEY", fallback="")
+    
+    @property
+    def AZURE_AI_FOUNDRY_ENDPOINT(self):
+        return self._config.get("KERNEL", "AZURE_AI_FOUNDRY_ENDPOINT", fallback="")
+    
+    @property
+    def AZURE_AI_FOUNDRY_DEPLOYMENT_NAME(self):
+        return self._config.get("KERNEL", "AZURE_AI_FOUNDRY_DEPLOYMENT_NAME", fallback="")
 
     def __new__(cls):
         if cls._instance is None:

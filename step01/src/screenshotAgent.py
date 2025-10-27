@@ -9,7 +9,7 @@ from fastapi import FastAPI, Body, Query
 from src.capture import capture_all, capture_one
 from src.config import ConfigManager
 from src.logger import get_logger
-from src.mcp_client import process_prompt
+from src.kernel_agent import KernelAgent
 from src.models import (
     ScreenshotGetResponse,
     ScreenshotGetResultData,
@@ -39,6 +39,7 @@ async def lifespan(app):
 
 
 app = FastAPI(lifespan=lifespan)
+agent = KernelAgent()
 
 
 @app.get("/api/v1/predefined/screenshot", response_model=ScreenshotGetResponse)
@@ -158,17 +159,10 @@ async def post_mcp_screenshot(request: MCPScreenshotPostRequest = Body(...)):
         raise ValueError("Prompt is required for MCP screenshot request.")
     
     # TODO: implement MCP screenshot capture
-    is_success = process_prompt(prompt=request.prompt)
-    requested_urlinfos = []
-    passed_urlinfos = []
-    failed_urlinfos = []
-
-    result_data = ScreenshotPostResultData(
-        requestedUrls=requested_urlinfos,
-        passedUrls=passed_urlinfos,
-        failedUrls=failed_urlinfos
-    )
-    return ScreenshotPostResponse(
+    response = await agent.get_response(messages=request.prompt)
+    _logger.debug(f"Response from agent: {str(response)}")
+    result_data = str(response)
+    return MCPScreenshotPostResponse(
         resultCd=ResultCode.SUCCESS,
         resultMsg="Success",
         data=result_data

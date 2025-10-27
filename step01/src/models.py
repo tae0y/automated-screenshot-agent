@@ -1,5 +1,7 @@
 from enum import Enum
 from pydantic import BaseModel, Field
+from semantic_kernel.agents import AgentResponseItem
+from semantic_kernel.contents.chat_message_content import ChatMessageContent
 from typing import List, Optional
 
 
@@ -96,4 +98,5 @@ class MCPScreenshotPostResponse(BaseResponse):
     """
     MCP Screenshot Response Model
     """
-    data: Optional[ScreenshotPostResultData] = None
+    #data: Optional[AgentResponseItem[ChatMessageContent]] = None
+    data: Optional[str] = None
