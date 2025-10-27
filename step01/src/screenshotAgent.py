@@ -161,7 +161,7 @@ async def post_mcp_screenshot(request: MCPScreenshotPostRequest = Body(...)):
     # TODO: implement MCP screenshot capture
     response = await agent.get_response(messages=request.prompt)
     _logger.debug(f"Response from agent: {str(response)}")
-    result_data = str(response)
+    result_data = getattr(response, "content", response)
     return MCPScreenshotPostResponse(
         resultCd=ResultCode.SUCCESS,
         resultMsg="Success",
