@@ -12,10 +12,8 @@ load_dotenv()
 
 class MCPClient:
     """
-    커스텀 로그인이 필요할땐 자체 Playwright MCP를
-    그외에는 일반 Playwright MCP를 사용
-    자체 Playwright MCP 내부에선 tool_call 메서드 호출로 로그인한 다음 
-    브라우저 컨텍스트를 전달함
+    커스텀 로그인 필요한 경우 로그인 호출한 다음 브라우저 컨텍스트를 저장
+    Playwright에서는 컨텍스트를 가져가서 사용
     """
     def __init__(self):
         self.session: Optional[ClientSession] = None
