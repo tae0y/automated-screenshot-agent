@@ -21,6 +21,9 @@
     ```bash
     cp config.sample.ini config.ini
     ```
+    
+    생성한 config.ini를 열어 Azure AI Foundry apiKey, endpoint, deploymentName을 설정합니다.
+    > 더 자세한 내용은 [Get started with Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/quickstarts/get-started-code?tabs=azure-ai-foundry#first-run-experience) 문서를 참고하세요.
 
 1. 파이썬 가상환경을 설정합니다.
    ```bash
