@@ -9,6 +9,7 @@ from fastapi import FastAPI, Body, Query
 from src.capture import capture_all, capture_one
 from src.config import ConfigManager
 from src.logger import get_logger
+from src.mcp_client import process_prompt
 from src.models import (
     ScreenshotGetResponse,
     ScreenshotGetResultData,
@@ -158,7 +159,7 @@ async def post_mcp_screenshot(request: MCPScreenshotPostRequest = Body(...)):
         raise ValueError("Prompt is required for MCP screenshot request.")
     else:
         # TODO: implement MCP screenshot capture
-        is_success = True
+        is_success = process_prompt(prompt=request.prompt)
         requested_urlinfos = []
         passed_urlinfos = []
         failed_urlinfos = []
