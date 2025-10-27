@@ -24,9 +24,17 @@
 
 1. 파이썬 가상환경을 설정합니다.
    ```bash
+   # Mac
    uv venv .step00
    source .step00/bin/activate
    export UV_PROJECT_ENVIRONMENT=.step00 && uv sync
+   ```
+
+   ```bash
+   # Windows
+   uv venv .step00
+    .\.step00\Scripts\Activate
+   uv sync --active
    ```
 
 1. 앱을 실행합니다.
@@ -42,6 +50,7 @@
 
 1. 테스트는 아래와 같이 실행합니다.
     ```bash
+    # Mac
     export UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group test
     PYTHONPATH=$PWD pytest
     ```
@@ -51,18 +60,39 @@
 
 1. Python 코드가 Flake8 Convention을 준수하는지 다음과 같이 확인합니다.
     ```bash
+    # Mac
     export UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group dev
     flake8 src/ tests/ --count --show-source --statistics
     ```
+
+    ```bash
+    # Windows
+    set UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group dev
+    flake8 src/ tests/ --count --show-source --statistics
+    ```
+
     > 검증 결과를 파일로 출력하려면 `flake8 src/ tests/ --count --show-source --statistics > flake8.log 2>&1` 명령어를 사용하세요.
 
 2. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
     ```bash
+    # Mac/bash
     export UV_PROJECT_ENVIRONMENT=.step00 && uv sync --group dev
     uv run --active uvicorn src.screenshotAgent:app --reload --port 9910 &
     curl http://localhost:9910/openapi.json -o openapi.json
     pkill -f uvicorn
     openapi-spec-validator openapi.json
     ```
+
+    ```cmd
+    # Windows/cmd
+    set UV_PROJECT_ENVIRONMENT=.step00
+    uv sync --group dev
+    start "uvicorn" uv run --active uvicorn src.screenshotAgent:app--reload --port 9910
+    timeout /t 3 >nul
+    curl http://localhost:9910/openapi.json -o openapi.json
+    taskkill /IM uvicorn.exe /F
+    openapi-spec-validator openapi.json
+    ```
+
     > 검증 결과를 파일로 출력하려면 `openapi-spec-validator openapi.json > openapi-validation.log 2>&1` 명령어를 사용하세요.
 
