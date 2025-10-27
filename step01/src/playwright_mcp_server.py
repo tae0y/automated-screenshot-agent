@@ -1,3 +1,6 @@
+# Created by blackwhite084, released under Apache 2.0
+# Modified by tae0y
+
 import asyncio
 import base64
 import os
