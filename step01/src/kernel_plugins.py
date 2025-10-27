@@ -3,6 +3,7 @@
 
 import base64
 import os
+import time
 import uuid
 
 from bs4 import BeautifulSoup
@@ -11,7 +12,12 @@ from typing import Annotated, Optional
 
 from playwright.async_api import async_playwright
 
+from src.config import ConfigManager
+from src.logger import get_logger
 from semantic_kernel.functions import kernel_function
+
+_logger = get_logger(__name__)
+_config = ConfigManager()
 
 
 class WebNavigationPlugin:
@@ -24,6 +30,7 @@ class WebNavigationPlugin:
         """
         Playwright 브라우저 세션을 생성하고, 필요시 URL로 이동합니다.
         """
+        _logger.info("Creating new browser session.")
         try:
             self._playwright = await async_playwright().start()
             browser = await self._playwright.chromium.launch(headless=True)
@@ -43,6 +50,7 @@ class WebNavigationPlugin:
         """
         현재 세션의 페이지에서 URL로 이동합니다.
         """
+        _logger.info(f"Navigating to URL: {url}")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
@@ -60,12 +68,15 @@ class WebNavigationPlugin:
         """
         전체 페이지 또는 특정 selector의 스크린샷을 base64로 반환합니다.
         """
+        _logger.info(f"Taking screenshot: {name}, selector: {selector}")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
         page = self._sessions[session_id]["page"]
         try:
-            file_path = f"{name}.png"
+            save_path = _config.SAVE_PATH
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            file_path = f"{save_path}/{name}-{timestamp}.png"
             if selector:
                 element = page.locator(selector)
                 await element.screenshot(path=file_path)
@@ -73,14 +84,18 @@ class WebNavigationPlugin:
                 await page.screenshot(path=file_path, full_page=True)
             with open(file_path, "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
-            os.remove(file_path)
-            return encoded_string
+            # os.remove(file_path)
+            # return encoded_string
+            return f"Screenshot saved and encoded: {file_path}"
         except Exception as e:
             return f"Screenshot failed: {e}"
 
-
     @kernel_function(description="Click an element by selector")
     async def click(self, selector: str) -> Annotated[str, "Click result"]:
+        """
+        지정된 셀렉터의 요소를 클릭합니다.
+        """
+        _logger.info(f"Clicking element with selector: {selector}")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
@@ -93,6 +108,10 @@ class WebNavigationPlugin:
 
     @kernel_function(description="Fill an input field")
     async def fill(self, selector: str, value: str) -> Annotated[str, "Fill result"]:
+        """
+        지정된 셀렉터의 입력 필드를 채웁니다.
+        """
+        _logger.info(f"Filling element with selector: {selector} with value: {value}")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
@@ -105,6 +124,10 @@ class WebNavigationPlugin:
 
     @kernel_function(description="Evaluate JS in browser")
     async def evaluate(self, script: str) -> Annotated[str, "Evaluation result"]:
+        """
+        브라우저에서 JavaScript 코드를 실행합니다.
+        """
+        _logger.info(f"Evaluating script: {script}")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
@@ -117,6 +140,10 @@ class WebNavigationPlugin:
 
     @kernel_function(description="Click element by text")
     async def click_text(self, text: str) -> Annotated[str, "Click result"]:
+        """
+        지정된 텍스트를 포함하는 요소를 클릭합니다.
+        """
+        _logger.info(f"Clicking element with text: {text}")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
@@ -129,6 +156,10 @@ class WebNavigationPlugin:
 
     @kernel_function(description="Get text content of all elements")
     async def get_text_content(self) -> Annotated[str, "Text content"]:
+        """
+        현재 페이지의 모든 텍스트 콘텐츠를 가져옵니다.
+        """
+        _logger.info("Getting text content of all elements.")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
@@ -142,6 +173,10 @@ class WebNavigationPlugin:
 
     @kernel_function(description="Get HTML content of element")
     async def get_html_content(self, selector: str) -> Annotated[str, "HTML content"]:
+        """
+        지정된 셀렉터의 요소 HTML 콘텐츠를 가져옵니다.
+        """
+        _logger.info(f"Getting HTML content of element with selector: {selector}")
         if not self._sessions:
             return "No active session. Please create a new session first."
         session_id = list(self._sessions.keys())[-1]
@@ -152,8 +187,12 @@ class WebNavigationPlugin:
         except Exception as e:
             return f"Get HTML content failed: {e}"
 
-    @kernel_function(description="Get visible HTML from a URL (body only)")
+    @kernel_function(description="Get visible and cleaned HTML from a URL (body only)")
     async def get_visible_html(self, url: str) -> Annotated[str, "Visible HTML content"]:
+        """
+        주어진 URL에서 보이는 HTML 콘텐츠를 가져옵니다.
+        """
+        _logger.info(f"Getting visible HTML from URL: {url}")
         try:
             playwright = await async_playwright().start()
             browser = await playwright.chromium.launch(headless=True)
@@ -162,12 +201,22 @@ class WebNavigationPlugin:
             visible_html = await page.evaluate("document.body.innerHTML")
             await browser.close()
             await playwright.stop()
-            return visible_html
+            cleaned_html = await self._clean_html(visible_html)
+            _logger.debug(f"Visible HTML fetched and cleaned. before length: {len(visible_html)}, after length: {len(cleaned_html)}")
+            return cleaned_html
         except Exception as e:
             return f"Failed to get visible HTML: {e}"
 
-    @kernel_function(description="Clean HTML by removing unnecessary tags (span, style, script, etc)")
-    async def clean_html(self, html: str) -> Annotated[str, "Cleaned HTML content"]:
+    # TODO: custom.py에 정의된 커스텀 login, logout 함수를 호출, 컨텍스트를 안전하게 공유하기
+    # def login():
+    # def logout():
+    # def save_context():
+    # def load_context():
+    # def save_screenshot():
+    # def get_url_from_system_name():
+
+
+    async def _clean_html(self, html: str) -> Annotated[str, "Cleaned HTML content"]:
         try:
             soup = BeautifulSoup(html, "html.parser")
             for tag in soup(["span", "style", "script", "noscript", "meta", "link"]):
@@ -176,5 +225,3 @@ class WebNavigationPlugin:
             return cleaned_html
         except Exception as e:
             return f"Failed to clean HTML: {e}"
-
-# TODO: custom.py에 정의된 커스텀 login, logout 함수를 호출, 컨텍스트를 안전하게 공유하기
