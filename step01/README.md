@@ -1,4 +1,4 @@
-# STEP 00 : 매일아침 자동으로 스크린샷
+# STEP 01 : Playwright MCP를 사용해 자동점검
 
 - 당초 프로세스: 스케줄 작업으로 스크린샷, 당직자는 확인후 보고(5분 내외)
 - 변경 프로세스: 추가로 당직자는 자연어로 시스템 정상인지 질의, 결과 확인후 보고
@@ -94,7 +94,7 @@
     # Windows/cmd
     set UV_PROJECT_ENVIRONMENT=.step01
     uv sync --group dev
-    start "uvicorn" uv run --active uvicorn src.screenshotAgent:app--reload --port 9910
+    start "uvicorn" uv run --active uvicorn src.screenshotAgent:app --reload --port 9910
     timeout /t 3 >nul
     curl http://localhost:9910/openapi.json -o openapi.json
     taskkill /IM uvicorn.exe /F

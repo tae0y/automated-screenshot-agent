@@ -1,7 +1,5 @@
 from enum import Enum
 from pydantic import BaseModel, Field
-from semantic_kernel.agents import AgentResponseItem
-from semantic_kernel.contents.chat_message_content import ChatMessageContent
 from typing import List, Optional
 
 
