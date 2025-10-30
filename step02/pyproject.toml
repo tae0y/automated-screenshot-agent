@@ -5,6 +5,7 @@ description = "scheduled screenshot agent automatically"
 readme = "README.md"
 requires-python = ">=3.12, <3.13"
 dependencies = [
+    "agent-framework>=1.0.0b251028",
     "bs4>=0.0.2",
     "fastapi>=0.120.0",
     "playwright>=1.55.0",
