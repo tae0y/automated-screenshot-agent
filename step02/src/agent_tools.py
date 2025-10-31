@@ -12,6 +12,7 @@ from typing import Annotated, Optional
 
 from agent_framework._tools import ai_function
 from playwright.async_api import async_playwright
+from pydantic import Field
 
 from src.config import ConfigManager
 from src.logger import get_logger
@@ -23,7 +24,7 @@ _sessions = {}
 _playwright = None
 
 @ai_function(name="new_session", description="Create a new browser session")
-async def new_session(self, url: Optional[str] = None) -> Annotated[str, "Session creation result"]:
+async def new_session(url: Annotated[str, Field(description="The URL to navigate to after creating the session")]) -> Annotated[str, "Session creation result"]:
     """
     Playwright 브라우저 세션을 생성하고, 필요시 URL로 이동합니다.
     """
@@ -44,7 +45,9 @@ async def new_session(self, url: Optional[str] = None) -> Annotated[str, "Sessio
         return f"Session creation failed: {e}"
 
 @ai_function(name="navigate", description="Navigate to a URL")
-async def navigate(self, url: str) -> Annotated[str, "Navigation result"]:
+async def navigate(
+    url: Annotated[str, Field(description="The URL to navigate to after creating the session")]
+) -> Annotated[str, "Navigation result"]:
     """
     현재 세션의 페이지에서 URL로 이동합니다.
     """
@@ -62,7 +65,10 @@ async def navigate(self, url: str) -> Annotated[str, "Navigation result"]:
         return f"Navigation failed: {e}"
 
 @ai_function(name="screenshot", description="Take a screenshot")
-async def screenshot(self, name: str, selector: Optional[str] = None) -> Annotated[str, "Base64 encoded image"]:
+async def screenshot(
+    name: Annotated[str, Field(description="The name of the screenshot")],
+    selector: Annotated[str, Field(description="The selector of the element to screenshot")] = None,
+) -> Annotated[str, "Base64 encoded image"]:
     """
     전체 페이지 또는 특정 selector의 스크린샷을 base64로 반환합니다.
     """
@@ -89,7 +95,9 @@ async def screenshot(self, name: str, selector: Optional[str] = None) -> Annotat
         return f"Screenshot failed: {e}"
 
 @ai_function(name="click", description="Click an element by selector")
-async def click(self, selector: str) -> Annotated[str, "Click result"]:
+async def click(
+    selector: Annotated[str, Field(description="The selector of the element to click")]
+) -> Annotated[str, "Click result"]:
     """
     지정된 셀렉터의 요소를 클릭합니다.
     """
@@ -105,7 +113,10 @@ async def click(self, selector: str) -> Annotated[str, "Click result"]:
         return f"Click failed: {e}"
 
 @ai_function(name="fill", description="Fill an input field")
-async def fill(self, selector: str, value: str) -> Annotated[str, "Fill result"]:
+async def fill(
+    selector: Annotated[str, Field(description="The selector of the element to fill")],
+    value: Annotated[str, Field(description="The value to fill the input field with")]
+) -> Annotated[str, "Fill result"]:
     """
     지정된 셀렉터의 입력 필드를 채웁니다.
     """
@@ -121,7 +132,9 @@ async def fill(self, selector: str, value: str) -> Annotated[str, "Fill result"]
         return f"Fill failed: {e}"
 
 @ai_function(name="evaluate", description="Evaluate JS in browser")
-async def evaluate(self, script: str) -> Annotated[str, "Evaluation result"]:
+async def evaluate(
+    script: Annotated[str, Field(description="The JavaScript code to evaluate")]
+) -> Annotated[str, "Evaluation result"]:
     """
     브라우저에서 JavaScript 코드를 실행합니다.
     """
@@ -137,7 +150,9 @@ async def evaluate(self, script: str) -> Annotated[str, "Evaluation result"]:
         return f"Evaluate failed: {e}"
 
 @ai_function(name="click_text", description="Click element by text")
-async def click_text(self, text: str) -> Annotated[str, "Click result"]:
+async def click_text(
+    text: Annotated[str, Field(description="The text of the element to click")]
+) -> Annotated[str, "Click result"]:
     """
     지정된 텍스트를 포함하는 요소를 클릭합니다.
     """
@@ -153,7 +168,7 @@ async def click_text(self, text: str) -> Annotated[str, "Click result"]:
         return f"Click by text failed: {e}"
 
 @ai_function(name="get_text_content", description="Get text content of all elements")
-async def get_text_content(self) -> Annotated[str, "Text content"]:
+async def get_text_content() -> Annotated[str, "Text content"]:
     """
     현재 페이지의 모든 텍스트 콘텐츠를 가져옵니다.
     """
@@ -170,7 +185,9 @@ async def get_text_content(self) -> Annotated[str, "Text content"]:
         return f"Get text content failed: {e}"
 
 @ai_function(name="get_html_content", description="Get HTML content of element")
-async def get_html_content(self, selector: str) -> Annotated[str, "HTML content"]:
+async def get_html_content(
+    selector: Annotated[str, Field(description="The selector of the element to get HTML content from")]
+) -> Annotated[str, "HTML content"]:
     """
     지정된 셀렉터의 요소 HTML 콘텐츠를 가져옵니다.
     """
@@ -181,24 +198,24 @@ async def get_html_content(self, selector: str) -> Annotated[str, "HTML content"
     page = _sessions[session_id]["page"]
     try:
         html_content = await page.locator(selector).inner_html()
-        return f"HTML content of element with selector {selector}: {html_content}"
+        cleaned_html = await _clean_html(html_content)
+        _logger.debug(f"HTML content fetched and cleaned for selector {selector}. before length: {len(html_content)}, after length: {len(cleaned_html)}")
+        return f"HTML content of element with selector {selector}: {cleaned_html}"
     except Exception as e:
         return f"Get HTML content failed: {e}"
 
-@ai_function(name="get_visible_html", description="Get visible and cleaned HTML from a URL (body only)")
-async def get_visible_html(self, url: str) -> Annotated[str, "Visible HTML content"]:
+@ai_function(name="get_visible_html", description="Get visible and cleaned HTML from the current page (body only)")
+async def get_visible_html() -> Annotated[str, "Visible HTML content"]:
     """
-    주어진 URL에서 보이는 HTML 콘텐츠를 가져옵니다.
+    현재 페이지의 보이는 HTML(body) 콘텐츠를 가져옵니다.
     """
-    _logger.info(f"Getting visible HTML from URL: {url}")
+    _logger.info("Getting visible HTML from current page.")
+    if not _sessions:
+        return "No active session. Please create a new session first."
+    session_id = list(_sessions.keys())[-1]
+    page = _sessions[session_id]["page"]
     try:
-        playwright = await async_playwright().start()
-        browser = await playwright.chromium.launch(headless=True)
-        page = await browser.new_page()
-        await page.goto(url)
-        visible_html = await page.evaluate("document.body.innerHTML")
-        await browser.close()
-        await playwright.stop()
+        visible_html = await page.locator("body").inner_html()
         cleaned_html = await _clean_html(visible_html)
         _logger.debug(f"Visible HTML fetched and cleaned. before length: {len(visible_html)}, after length: {len(cleaned_html)}")
         return cleaned_html
@@ -214,7 +231,7 @@ async def get_visible_html(self, url: str) -> Annotated[str, "Visible HTML conte
 # def get_url_from_system_name():
 
 
-async def _clean_html(self, html: str) -> Annotated[str, "Cleaned HTML content"]:
+async def _clean_html(html: str) -> Annotated[str, "Cleaned HTML content"]:
     try:
         soup = BeautifulSoup(html, "html.parser")
         for tag in soup(["span", "style", "script", "noscript", "meta", "link"]):
