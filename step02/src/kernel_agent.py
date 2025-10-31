@@ -21,6 +21,7 @@ class KernelAgent:
                 api_key=_config.AZURE_AI_FOUNDRY_API_KEY,
                 endpoint=_config.AZURE_AI_FOUNDRY_ENDPOINT,
                 deployment_name=_config.AZURE_AI_FOUNDRY_DEPLOYMENT_NAME,
+                api_version="2024-12-01-preview" # for o4-mini
             ),
             name="SK-Assistant",
             instructions="You are a helpful assistant.",

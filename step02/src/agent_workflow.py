@@ -31,12 +31,13 @@ from src.agent_tools import (
 )
 from src.config import ConfigManager
 from src.logger import get_logger
+from src.kernel_agent import KernelAgent
 
 _logger = get_logger(__name__)
 _config = ConfigManager()
 _user_prompt = ""
 _previous_result = None
-
+_agent = KernelAgent()
 
 class JobStatus(Enum):
     """
@@ -90,8 +91,12 @@ class SubmitToWorkerAgent(Executor):
 
         elif request.status == JobStatus.INIT:
             prompt = f"""
+            Parse the user's request carefully and use the tools to fulfill the request.
+
             USER'S UI test request:
             {request.user_prompt}
+
+            Above is the user's UI test request. Perform the test using the available tools.
             """
             _logger.debug(f"SubmitToWorkerAgent sending prompt: {prompt}")
             await ctx.send_message(
@@ -106,11 +111,17 @@ class SubmitToWorkerAgent(Executor):
    
         else:
             prompt = f"""
-            The previous task was not completed successfully due to: {request.status.name}.
+            The previous task was not completed successfully due to: 
+            {request.status.name}.
+            
             Please review and try again.
+            Parse the user's request carefully and use the tools to fulfill the request step by step.
+            After performing the test, provide a detailed report of the results.
 
             USER'S UI test request:
             {request.user_prompt}
+
+            Above is the user's UI test request. Perform the test using the available tools.
             """
             _logger.debug(f"SubmitToWorkerAgent sending prompt: {prompt}")
             await ctx.send_message(
@@ -123,6 +134,58 @@ class SubmitToWorkerAgent(Executor):
                 target_id=self.worker_executor_id
             )
         
+
+class WorkerExecutor(Executor):
+    """
+    Worker executor to perform UI tests based on user input.
+    """
+
+    def __init__(self, id: str, submit_to_manager_id: str = "submit_to_manager"):
+        """Initialize the SubmitToWorkerAgent"""
+        super().__init__(
+            id=id or "worker_executor"
+        )
+        self.submit_to_manager_id = submit_to_manager_id
+
+    @handler
+    async def do_test(self, request: JobRequest, ctx: WorkflowContext[str]) -> None:
+        if request.status == JobStatus.COMPLETED:
+            _logger.debug(f"SubmitToWorkerAgent completed the task successfully.")
+            _logger.debug(f"SubmitToWorkerAgent yielding output: {request.previous_result}")
+            await ctx.yield_output(f"Task completed successfully. Result: {request.previous_result}")
+
+        elif request.status == JobStatus.INIT:
+            prompt = f"""
+            Parse the user's request carefully and use the tools to fulfill the request.
+
+            USER'S UI test request:
+            {request.user_prompt}
+
+            Above is the user's UI test request. Perform the test using the available tools.
+            """
+            _logger.debug(f"SubmitToWorkerAgent sending prompt: {prompt}")
+            _agent_response = await _agent.get_response(messages=prompt)
+            _logger.debug(f"WorkerExecutor received response: {_agent_response}")
+            await ctx.send_message(_agent_response)
+   
+        else:
+            prompt = f"""
+            The previous task was not completed successfully due to: 
+            {request.status.name}.
+            
+            Please review and try again.
+            Parse the user's request carefully and use the tools to fulfill the request step by step.
+            After performing the test, provide a detailed report of the results.
+
+            USER'S UI test request:
+            {request.user_prompt}
+
+            Above is the user's UI test request. Perform the test using the available tools.
+            """
+            _logger.debug(f"SubmitToWorkerAgent sending prompt: {prompt}")
+            _agent_response = await _agent.get_response(messages=prompt)
+            _logger.debug(f"WorkerExecutor received response: {_agent_response}")
+            await ctx.send_message(_agent_response)
 
 
 class SubmitToManagerAgent(Executor):
@@ -138,11 +201,16 @@ class SubmitToManagerAgent(Executor):
         self.manager_agent_id = manager_agent_id
 
     @handler
-    async def submit_task(self, response: AgentExecutorResponse, ctx: WorkflowContext[str]) -> None:
+    async def submit_task(self, response: str, ctx: WorkflowContext[str]) -> None:
         global _previous_result, _user_prompt
-        response_text = response.agent_run_response.text.strip()
+        # response_text = response.agent_run_response.text.strip()
+        response_text = response.strip()
         _previous_result = response_text
         prompt = f"""
+        You are a QA senior manager overseeing a UI testing worker.
+        
+        Review the WORKER'S RESPONSE and determine the USER'S UI test request was fulfilled the UI test request.                                
+
         USER'S UI test request:
         {_user_prompt}
 
@@ -219,42 +287,31 @@ class AgentWorkflow:
         chat_client = AzureOpenAIChatClient(
             api_key=_config.AZURE_AI_FOUNDRY_API_KEY,
             endpoint=_config.AZURE_AI_FOUNDRY_ENDPOINT,
-            deployment_name=_config.AZURE_AI_FOUNDRY_DEPLOYMENT_NAME
+            deployment_name=_config.AZURE_AI_FOUNDRY_DEPLOYMENT_NAME,
+            api_version="2024-12-01-preview" # for o4-mini
         )
-        self.worker_executor = AgentExecutor(
-            chat_client.create_agent(
-                instructions=(
-                    """
-                    You are a QA engineer for UI testing.
-                    You will test based on user's requests in three steps: 
-                        - ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
+        # self.worker_executor = AgentExecutor(
+        #     chat_client.create_agent(
+        #         instructions=(
+        #             """
+        #             You are a QA engineer for UI testing.
+        #             Answer to the user's UI testing request by performing the test using the available tools.
+        #             Always use the tools to interact with the web page as needed.
+        #             """
+        #         ),
+        #         # TODO: tool 목록 전체를 보내기
+        #         tools=get_visible_html
+        #     ),
+        #     id="worker_agent",
+        # )
+        # self.submit_to_worker_agent = SubmitToWorkerAgent(id="submit_to_worker", worker_executor_id=self.worker_executor.id)
         
-                    Answer in the format below:
-                    ASSUMPTION: <your assumption for testing>
-                    REASON: <your reasoning including test methodology and test task>
-                    RESULT: <your test result>
-
-                    You have access to the following tool to perform UI testing:
-                    - get_visible_html: Retrieve the visible HTML content of the page.
-                    """
-                ),
-                # TODO: tool 목록 전체를 보내기
-                tools=get_visible_html
-            ),
-            id="worker_agent"
-        )
-        self.submit_to_worker_agent = SubmitToWorkerAgent(id="submit_to_worker", worker_executor_id=self.worker_executor.id)
+        self.worker_executor = WorkerExecutor(id="worker_executor", submit_to_manager_id="submit_to_manager")
         self.manager_executor = AgentExecutor(
             chat_client.create_agent(
                 instructions=(
                     """
-                    You are a QA senior manager overseeing a UI testing worker.
-                    The worker has processed the task based on three steps: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
-                    Each step has three status: INCORRECT, INCOMPLETE, CORRECT_AND_COMPLETED.
-                    The final "Result" has three status: UNREASONABLE itself, INCONSISTENCY with REASON, CORRECT_AND_COMPLETED.
-
-                    Review the worker's response and determine the status of the job fulfilled the UI test request.
-                    Respond with one of the following statuses only:
+                    Respond strictly with one of the following statuses only:
                         - UNREASONABLE_RESULT
                         - INCONSISTENCY_BETWEEN_REASON_AND_RESULT
                         - INCORRECT_TASK
@@ -275,12 +332,11 @@ class AgentWorkflow:
         # Build workflow
         self.workflow = (
             WorkflowBuilder()
-            .add_edge(self.submit_to_worker_agent, self.worker_executor)
             .add_edge(self.worker_executor, self.submit_to_manager_agent)
             .add_edge(self.submit_to_manager_agent, self.manager_executor)
             .add_edge(self.manager_executor, self.parse_manager_response)
-            .add_edge(self.parse_manager_response, self.submit_to_worker_agent)
-            .set_start_executor(self.submit_to_worker_agent)
+            .add_edge(self.parse_manager_response, self.worker_executor)
+            .set_start_executor(self.worker_executor)
             .build()
         )
         pass
@@ -295,7 +351,7 @@ class AgentWorkflow:
                 _logger.warning("Max iterations reached, terminating workflow.")
                 result = str(event.data) if isinstance(event, WorkflowOutputEvent) else "Max iterations reached."
                 break
-            if isinstance(event, ExecutorCompletedEvent) and event.executor_id == self.submit_to_worker_agent.id:
+            if isinstance(event, ExecutorCompletedEvent) and event.executor_id == self.parse_manager_response.id:
                 iterations += 1
             elif isinstance(event, WorkflowOutputEvent):
                 _logger.debug(f"Workflow final results: {event.data}")
