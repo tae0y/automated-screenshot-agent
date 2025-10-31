@@ -41,8 +41,9 @@
 
 1. 앱을 실행합니다.
     ```bash
-    uv run --active uvicorn src.screenshotAgent:app --reload --port 9910
+    uv run --active uvicorn src.screenshotAgent:app --port 9910
     ```
+    > In Windows, turn off `--reload` option to use playwright.
 
 1. `/docs` Swagger 화면에 접속해 API 명세를 확인하세요.
 
