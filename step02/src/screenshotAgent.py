@@ -190,7 +190,7 @@ async def post_mcp_screenshot(request: MCPScreenshotPostRequest = Body(...)):
         raise ValueError("Prompt is required for MCP screenshot request.")
     
     # TODO: implement Multi Agents screenshot capture
-    response = await agent_workflow.get_response(messages=request.prompt)
+    response = await agent_workflow.get_response(user_prompt=request.prompt)
     _logger.debug(f"Response from agent_workflow: {str(response)}")
     result_data = getattr(response, "content", response)
     return MCPScreenshotPostResponse(
