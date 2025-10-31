@@ -35,6 +35,7 @@ from src.logger import get_logger
 _logger = get_logger(__name__)
 _config = ConfigManager()
 _user_prompt = ""
+_previous_result = None
 
 
 class JobStatus(Enum):
@@ -43,7 +44,6 @@ class JobStatus(Enum):
     - There are three steps in Job: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT
     - Each step has three status: INCORRECT, INCOMPLETE, CORRECT_AND_COMPLETED
     - Final "Result" has three status: UNREASONABLE itself, INCONSISTENCY with REASON, CORRECT_AND_COMPLETED
-    - There is exception status: I_DONT_KNOW_WHY_BUT_JUST_RETRY
     """
     INIT = "INIT"
     UNREASONABLE_RESULT = "UNREASONABLE_RESULT"
@@ -54,7 +54,7 @@ class JobStatus(Enum):
     INCOMPLETE_METHODOLOGY = "INCOMPLETE_METHODOLOGY"
     INCORRECT_ASSUMPTION = "INCORRECT_ASSUMPTION"
     INCOMPLETE_ASSUMPTION = "INCOMPLETE_ASSUMPTION"
-    I_DONT_KNOW_WHY_BUT_JUST_RETRY = "I_DONT_KNOW_WHY_BUT_JUST_RETRY"
+    # I_DONT_KNOW_WHY_BUT_JUST_RETRY = "I_DONT_KNOW_WHY_BUT_JUST_RETRY"
     JOBSTATUS_CANNOT_PARSED = "JOBSTATUS_CANNOT_PARSED"
     COMPLETED = "COMPLETED"
 
@@ -63,9 +63,10 @@ class JobRequest:
     """
     Job request data structure.
     """
-    def __init__(self, status: JobStatus = JobStatus.INIT, user_prompt: str = ""):
+    def __init__(self, status: JobStatus = JobStatus.INIT, user_prompt: str = "", previous_result: str = None):
         self.status = status
         self.user_prompt = user_prompt
+        self.previous_result = previous_result
 
 
 class SubmitToWorkerAgent(Executor):
@@ -74,7 +75,7 @@ class SubmitToWorkerAgent(Executor):
     """
 
     def __init__(self, id: str, worker_executor_id: str = "worker_agent"):
-        """Initialize the WorkerExecutor"""
+        """Initialize the SubmitToWorkerAgent"""
         super().__init__(
             id=id or "submit_to_worker"
         )
@@ -83,48 +84,45 @@ class SubmitToWorkerAgent(Executor):
     @handler
     async def do_test(self, request: JobRequest, ctx: WorkflowContext[str]) -> None:
         if request.status == JobStatus.COMPLETED:
-            _logger.debug(f"WorkerExecutor completed the task successfully.")
-            _logger.debug(f"WorkerExecutor yielding output: {self._result}")
-            await ctx.yield_output(f"Task completed successfully. {self._result}")
+            _logger.debug(f"SubmitToWorkerAgent completed the task successfully.")
+            _logger.debug(f"SubmitToWorkerAgent yielding output: {request.previous_result}")
+            await ctx.yield_output(f"Task completed successfully. Result: {request.previous_result}")
 
         elif request.status == JobStatus.INIT:
             prompt = f"""
-            You are a QA engineer for UI testing.
-            You will process the task based on three steps: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
-            Answer in the format below:
-            ---
-            ASSUMPTION: <your assumption>
-            REASON: <your reasoning including methodology and task>
-            RESULT: <your result>
-            ---
-
-            user request is:
+            USER'S UI test request:
             {request.user_prompt}
             """
-            _logger.debug(f"WorkerExecutor sending prompt: {prompt}")
+            _logger.debug(f"SubmitToWorkerAgent sending prompt: {prompt}")
+            await ctx.send_message(
+                AgentExecutorRequest(
+                    messages=[
+                        ChatMessage(role=Role.USER, content=prompt)
+                    ],
+                    should_respond=True
+                ),
+                target_id=self.worker_executor_id
+            )
    
         else:
             prompt = f"""
             The previous task was not completed successfully due to: {request.status.name}.
             Please review and try again.
 
-            You are a QA engineer for UI testing.
-            You will process the task based on three steps: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
-
-            original user request was:
+            USER'S UI test request:
             {request.user_prompt}
             """
-            _logger.debug(f"WorkerExecutor sending prompt: {prompt}")
+            _logger.debug(f"SubmitToWorkerAgent sending prompt: {prompt}")
+            await ctx.send_message(
+                AgentExecutorRequest(
+                    messages=[
+                        ChatMessage(role=Role.USER, content=prompt)
+                    ],
+                    should_respond=True
+                ),
+                target_id=self.worker_executor_id
+            )
         
-        await ctx.send_message(
-            AgentExecutorRequest(
-                messages=[
-                    ChatMessage(role=Role.USER, content=prompt)
-                ],
-                should_respond=True
-            ),
-            target_id=self.worker_executor_id
-        )
 
 
 class SubmitToManagerAgent(Executor):
@@ -141,30 +139,20 @@ class SubmitToManagerAgent(Executor):
 
     @handler
     async def submit_task(self, response: AgentExecutorResponse, ctx: WorkflowContext[str]) -> None:
+        global _previous_result, _user_prompt
         response_text = response.agent_run_response.text.strip()
+        _previous_result = response_text
         prompt = f"""
-        You are a QA senior manager overseeing a UI testing worker.
-        The worker has processed the task based on three steps: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
-        Each step has three status: INCORRECT, INCOMPLETE, CORRECT_AND_COMPLETED.
-        The final "Result" has three status: UNREASONABLE itself, INCONSISTENCY with REASON, CORRECT_AND_COMPLETED.
-        
-        The worker has provided the following response:
+        USER'S UI test request:
+        {_user_prompt}
+
+        WORKER'S RESPONSE:
         {response_text}
 
-        Based on this response, determine whether the task has been completed successfully or not.
-        Provide your decision strictly as one of the following statuses:
-            - UNREASONABLE_RESULT
-            - INCONSISTENCY_BETWEEN_REASON_AND_RESULT
-            - INCORRECT_TASK
-            - INCOMPLETE_TASK
-            - INCORRECT_METHODOLOGY
-            - INCOMPLETE_METHODOLOGY
-            - INCORRECT_ASSUMPTION
-            - INCOMPLETE_ASSUMPTION
-            - I_DONT_KNOW_WHY_BUT_JUST_RETRY
-            - COMPLETED
+        Based on this response, determine whether UI test has been completed successfully or not.
         """
 
+        _logger.debug(f"SubmitToManagerAgent sending prompt: {prompt}")
         await ctx.send_message(
             AgentExecutorRequest(
                 messages=[
@@ -182,16 +170,17 @@ class ParseManagerResponse(Executor):
     """
     @handler
     async def parse_response(self, response: AgentExecutorResponse, ctx: WorkflowContext[JobRequest]) -> None:
-        global _user_prompt
+        global _user_prompt, _previous_result
         response_text = response.agent_run_response.text.strip().upper()
+        _logger.debug(f"ParseManagerResponse received response: {response_text}")
         try:
             if response_text in JobStatus.__members__:
-                await ctx.yield_output(JobRequest(status=JobStatus[response_text], user_prompt=_user_prompt)) # TODO: sustain user_prompt through workflow... how?
+                await ctx.send_message(JobRequest(status=JobStatus[response_text], user_prompt=_user_prompt, previous_result=_previous_result))
             else:
-                await ctx.yield_output(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt))  # I_DONT_KNOW_WHY_BUT_JUST_RETRY
+                await ctx.send_message(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt, previous_result=_previous_result))  # I_DONT_KNOW_WHY_BUT_JUST_RETRY
         except Exception as e:
             _logger.error(f"Error parsing response: {e}")
-            await ctx.yield_output(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt))
+            await ctx.send_message(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt, previous_result=_previous_result))
 
 
 class AgentWorkflow:
@@ -236,15 +225,21 @@ class AgentWorkflow:
             chat_client.create_agent(
                 instructions=(
                     """
+                    You are a QA engineer for UI testing.
+                    You will test based on user's requests in three steps: 
+                        - ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
+        
                     Answer in the format below:
-                    ---
-                    ASSUMPTION: <your assumption>
-                    REASON: <your reasoning including methodology and task>
-                    RESULT: <your result>
-                    ---
+                    ASSUMPTION: <your assumption for testing>
+                    REASON: <your reasoning including test methodology and test task>
+                    RESULT: <your test result>
+
+                    You have access to the following tool to perform UI testing:
+                    - get_visible_html: Retrieve the visible HTML content of the page.
                     """
                 ),
-                tools=tools
+                # TODO: tool 목록 전체를 보내기
+                tools=get_visible_html
             ),
             id="worker_agent"
         )
@@ -253,7 +248,13 @@ class AgentWorkflow:
             chat_client.create_agent(
                 instructions=(
                     """
-                    You strictly respond with one of:
+                    You are a QA senior manager overseeing a UI testing worker.
+                    The worker has processed the task based on three steps: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
+                    Each step has three status: INCORRECT, INCOMPLETE, CORRECT_AND_COMPLETED.
+                    The final "Result" has three status: UNREASONABLE itself, INCONSISTENCY with REASON, CORRECT_AND_COMPLETED.
+
+                    Review the worker's response and determine the status of the job fulfilled the UI test request.
+                    Respond with one of the following statuses only:
                         - UNREASONABLE_RESULT
                         - INCONSISTENCY_BETWEEN_REASON_AND_RESULT
                         - INCORRECT_TASK
@@ -262,7 +263,6 @@ class AgentWorkflow:
                         - INCOMPLETE_METHODOLOGY
                         - INCORRECT_ASSUMPTION
                         - INCOMPLETE_ASSUMPTION
-                        - I_DONT_KNOW_WHY_BUT_JUST_RETRY
                         - COMPLETED
                     """
                 )
@@ -285,22 +285,20 @@ class AgentWorkflow:
         )
         pass
 
-    async def get_response(self, user_prompt: str, max_iterations: int = 10) -> str:
+    async def get_response(self, user_prompt: str, max_iterations: int = 2) -> str:
         global _user_prompt
         _user_prompt = user_prompt
         iterations = 0
         result = ""
-        async for event in self.workflow.run_stream(JobRequest(status=JobStatus.INIT, user_prompt=user_prompt)):
+        async for event in self.workflow.run_stream(JobRequest(status=JobStatus.INIT, user_prompt=user_prompt, previous_result=None)):
             if iterations >= max_iterations:
                 _logger.warning("Max iterations reached, terminating workflow.")
                 result = str(event.data) if isinstance(event, WorkflowOutputEvent) else "Max iterations reached."
                 break
             if isinstance(event, ExecutorCompletedEvent) and event.executor_id == self.submit_to_worker_agent.id:
-                _logger.debug(f"WorkerExecutor completed event received.")
-                result = event.data
                 iterations += 1
             elif isinstance(event, WorkflowOutputEvent):
-                _logger.debug(f"Workflow output event received: {event.data}")
+                _logger.debug(f"Workflow final results: {event.data}")
                 result = event.data
         _logger.debug(f"Total iterations: {iterations} times.")
         return str(result)
