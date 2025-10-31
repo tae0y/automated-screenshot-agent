@@ -248,7 +248,7 @@ class AgentWorkflow:
             api_version="2024-12-01-preview" # for o4-mini
         )
 
-        self.worker_executor = Executor(
+        self.worker_executor = AgentExecutor(
             chat_client.create_agent(
                 instructions=(
                     """
