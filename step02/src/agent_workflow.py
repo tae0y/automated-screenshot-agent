@@ -1,4 +1,3 @@
-import asyncio
 from dataclasses import dataclass
 from enum import Enum
 
@@ -6,7 +5,6 @@ from agent_framework import (
     AgentExecutor,
     AgentExecutorRequest,
     AgentExecutorResponse,
-    ChatAgent,
     ChatMessage,
     Executor,
     ExecutorCompletedEvent,
@@ -16,8 +14,8 @@ from agent_framework import (
     WorkflowOutputEvent,
     handler,
 )
-from agent_framework.azure import AzureOpenAIChatClient
-from azure.identity import AzureCliCredential
+from agent_framework.azure import AzureOpenAIChatClient, AzureOpenAIResponsesClient
+from pydantic import BaseModel
 
 from src.agent_tools import (
     new_session,
@@ -25,7 +23,7 @@ from src.agent_tools import (
     screenshot,
     click,
     fill,
-    evaluate,
+    # evaluate,
     click_text,
     get_text_content,
     get_html_content,
@@ -33,7 +31,6 @@ from src.agent_tools import (
 )
 from src.config import ConfigManager
 from src.logger import get_logger
-from src.kernel_agent import KernelAgent
 
 _logger = get_logger(__name__)
 _config = ConfigManager()
@@ -72,78 +69,94 @@ class UserRequest:
     previous_result: str = None
 
 
-# @dataclass
-# class ParsedUserRequest:
-#     """
-#     Parsed user request data structure.
-#     """
-#     target_url: str
-#     desired_actions: str
-#     acceptance_criteria: str
+@dataclass
+class ParsedUserRequest(BaseModel):
+    """
+    Parsed user request data structure.
+    """
+    target_url: str
+    desired_actions: str
+    acceptance_criteria: str
 
 
 class SubmitToWorkerExecutor(Executor):
     """
-    Worker executor to perform UI tests based on user input.
+    SubmitToWorkerExecutor for handling task submissions to the worker.
     """
-    def __init__(self, id: str, worker_executor_id: str = "worker_agent"):
+    def __init__(
+        self, 
+        id: str, 
+        worker_executor_id: str = "worker_agent",
+        agent: AzureOpenAIChatClient = None
+    ):
         """Initialize the WorkerExecutor"""
         super().__init__(
             id=id or "submit_to_worker"
         )
         self.worker_executor_id = worker_executor_id
+        self.agent = agent
 
     @handler
-    async def do_test(self, request: UserRequest, ctx: WorkflowContext[AgentExecutorResponse]) -> None:
+    async def do_test(self, request: UserRequest, ctx: WorkflowContext[str]) -> None:
         if request.status == JobStatus.COMPLETED:
-            _logger.debug(f"WorkerExecutor completed the task successfully.")
-            _logger.debug(f"WorkerExecutor yielding output: {request.previous_result}")
+            _logger.debug(f"SubmitToWorkerExecutor completed the task successfully.")
+            _logger.debug(f"SubmitToWorkerExecutor yielding output: {request.previous_result}")
             await ctx.yield_output(f"Task completed successfully. Result: {request.previous_result}")
 
         elif request.status == JobStatus.INIT:
-            prompt = f"""
-            Parse the user's request carefully and use the tools to fulfill the request.
-
-            USER'S UI test request:
-            {request.user_prompt}
-
-            Above is the user's UI test request. Perform the test using the available tools.
-            """
-            _logger.debug(f"WorkerExecutor sending prompt: {prompt}")
-            await ctx.send_message(
-                AgentExecutorRequest(
-                    messages=[
-                        ChatMessage(role=Role.USER, content=prompt)
-                    ],
-                    should_respond=True
-                ),
-                target_id=self.worker_executor_id
+            parsed_request = await self.agent.run(
+                "Parse the following user request into target_url, desired_actions, and acceptance_criteria.\n"
+                f"{request.user_prompt}",
+                response_format=ParsedUserRequest,
             )
+            _logger.debug(f"SubmitToWorkerExecutor parsed request: {parsed_request.value}")
+            parsed_request = parsed_request.value
+
+            prompt = f"""
+            DO PERFORM UI test to fulfill the USER'S UI test request.
+            * Target URL: {parsed_request.target_url}
+            * Desired Actions: {parsed_request.desired_actions}
+            * Acceptance Criteria: {parsed_request.acceptance_criteria}
+            
+            DO NOT ask further questions or informations from the user.
+            MUST perform the test with USER's current request.
+            MUST USE THE TOOLS PROVIDED TO YOU TO PERFORM ACTIONS ON THE WEB PAGE.
+            """
+            _logger.debug(f"SubmitToWorkerExecutor sending prompt: {prompt}")
+            await ctx.send_message(prompt)
    
         else:
-            prompt = f"""
-            The previous task was not completed successfully due to: 
-            {request.status.name}.
-            
-            Please review and try again.
-            Parse the user's request carefully and use the tools to fulfill the request step by step.
-            After performing the test, provide a detailed report of the results.
-
-            USER'S UI test request:
-            {request.user_prompt}
-
-            Above is the user's UI test request. Perform the test using the available tools.
-            """
-            _logger.debug(f"WorkerExecutor sending prompt: {prompt}")
-            await ctx.send_message(
-                AgentExecutorRequest(
-                    messages=[
-                        ChatMessage(role=Role.USER, content=prompt)
-                    ],
-                    should_respond=True
-                ),
-                target_id=self.worker_executor_id
+            parsed_request = await self.agent.run(
+                "Parse the following user request into target_url, desired_actions, and acceptance_criteria.\n"
+                f"{request.user_prompt}",
+                response_format=ParsedUserRequest,
             )
+            _logger.debug(f"SubmitToWorkerExecutor parsed request: {parsed_request.value}")
+            parsed_request = parsed_request.value
+
+            prompt = f"""
+            DO PERFORM UI test to fulfill the USER'S UI test request.
+            * Target URL: {parsed_request.target_url}
+            * Desired Actions: {parsed_request.desired_actions}
+            * Acceptance Criteria: {parsed_request.acceptance_criteria}
+
+            REFER TO the WORKER'S PREVIOUS RESPONSE and JOB STATUS, and TRY DIFFERENDT APPROACH to COMPLETE the UI test.
+            ----
+            WORKER'S PREVIOUS RESPONSE:
+            {request.previous_result}
+            ----
+
+            ----
+            WORKER'S JOB STATUS:
+            {request.status.name}.
+            ----
+            
+            DO NOT ask further questions or informations.
+            DO PERFORM the test with the above prompt.
+            MUST USE THE TOOLS PROVIDED TO YOU TO PERFORM ACTIONS ON THE WEB PAGE.
+            """
+            _logger.debug(f"SubmitToWorkerExecutor sending prompt: {prompt}")
+            await ctx.send_message(prompt)
 
 
 class SubmitToManagerAgent(Executor):
@@ -168,11 +181,15 @@ class SubmitToManagerAgent(Executor):
         
         Review the WORKER'S RESPONSE and determine the USER'S UI test request was fulfilled the UI test request.                                
 
+        ----
         USER'S UI test request:
         {_user_prompt}
+        ----
 
+        ----
         WORKER'S RESPONSE:
         {response_text}
+        ----
 
         Based on this response, determine whether UI test has been completed successfully or not.
         """
@@ -235,7 +252,7 @@ class AgentWorkflow:
             screenshot,
             click,
             fill,
-            evaluate,
+            # evaluate,
             click_text,
             get_text_content,
             get_html_content,
@@ -247,14 +264,23 @@ class AgentWorkflow:
             deployment_name=_config.AZURE_AI_FOUNDRY_DEPLOYMENT_NAME,
             api_version="2024-12-01-preview" # for o4-mini
         )
+        response_client = AzureOpenAIResponsesClient(
+            api_key=_config.AZURE_AI_FOUNDRY_API_KEY,
+            endpoint=_config.AZURE_AI_FOUNDRY_ENDPOINT,
+            deployment_name=_config.AZURE_AI_FOUNDRY_DEPLOYMENT_NAME,
+            api_version="2024-05-01-preview"
+        )
 
         self.worker_executor = AgentExecutor(
             chat_client.create_agent(
                 instructions=(
                     """
                     You are a QA engineer for UI testing.
-                    Answer to the user's UI testing request by performing the test using the available tools.
-                    Always use the tools to interact with the web page as needed.
+                    Perform UI tests based on the user's requests using the provided tools.
+                    Make sure to follow the user's instructions carefully and provide detailed results.
+                    If you encounter any issues, describe them clearly in your response.
+                    
+                    MUST USE THE TOOLS PROVIDED TO YOU TO PERFORM ACTIONS ON THE WEB PAGE.
                     """
                 ),
                 # TODO: tool 목록 전체를 보내기
@@ -262,7 +288,11 @@ class AgentWorkflow:
             ),
             id="worker_agent",
         )
-        self.submit_to_worker_agent = SubmitToWorkerExecutor(id="submit_to_worker", worker_executor_id=self.worker_executor.id)
+        self.submit_to_worker_agent = SubmitToWorkerExecutor(
+            id="submit_to_worker",
+            worker_executor_id=self.worker_executor.id,
+            agent=chat_client.create_agent()
+        )
         self.manager_executor = AgentExecutor(
             chat_client.create_agent(
                 instructions=(

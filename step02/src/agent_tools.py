@@ -28,7 +28,7 @@ async def new_session(url: Annotated[str, Field(description="The URL to navigate
     """
     Playwright 브라우저 세션을 생성하고, 필요시 URL로 이동합니다.
     """
-    _logger.info("Creating new browser session.")
+    _logger.info(f"[TOOLS] Creating new browser session with URL: {url}")
     try:
         global _playwright
         _playwright = await async_playwright().start()
@@ -51,7 +51,7 @@ async def navigate(
     """
     현재 세션의 페이지에서 URL로 이동합니다.
     """
-    _logger.info(f"Navigating to URL: {url}")
+    _logger.info(f"[TOOLS] Navigating to URL: {url}")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -72,7 +72,7 @@ async def screenshot(
     """
     전체 페이지 또는 특정 selector의 스크린샷을 base64로 반환합니다.
     """
-    _logger.info(f"Taking screenshot: {name}, selector: {selector}")
+    _logger.info(f"[TOOLS] Taking screenshot: {name}, selector: {selector}")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -101,7 +101,7 @@ async def click(
     """
     지정된 셀렉터의 요소를 클릭합니다.
     """
-    _logger.info(f"Clicking element with selector: {selector}")
+    _logger.info(f"[TOOLS] Clicking element with selector: {selector}")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -120,7 +120,7 @@ async def fill(
     """
     지정된 셀렉터의 입력 필드를 채웁니다.
     """
-    _logger.info(f"Filling element with selector: {selector} with value: {value}")
+    _logger.info(f"[TOOLS] Filling element with selector: {selector} with value: {value}")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -138,7 +138,7 @@ async def evaluate(
     """
     브라우저에서 JavaScript 코드를 실행합니다.
     """
-    _logger.info(f"Evaluating script: {script}")
+    _logger.info(f"[TOOLS] Evaluating script: {script}")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -156,7 +156,7 @@ async def click_text(
     """
     지정된 텍스트를 포함하는 요소를 클릭합니다.
     """
-    _logger.info(f"Clicking element with text: {text}")
+    _logger.info(f"[TOOLS] Clicking element with text: {text}")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -172,7 +172,7 @@ async def get_text_content() -> Annotated[str, "Text content"]:
     """
     현재 페이지의 모든 텍스트 콘텐츠를 가져옵니다.
     """
-    _logger.info("Getting text content of all elements.")
+    _logger.info(f"[TOOLS] Getting text content of all elements.")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -191,7 +191,7 @@ async def get_html_content(
     """
     지정된 셀렉터의 요소 HTML 콘텐츠를 가져옵니다.
     """
-    _logger.info(f"Getting HTML content of element with selector: {selector}")
+    _logger.info(f"[TOOLS] Getting HTML content of element with selector: {selector}")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
@@ -209,7 +209,7 @@ async def get_visible_html() -> Annotated[str, "Visible HTML content"]:
     """
     현재 페이지의 보이는 HTML(body) 콘텐츠를 가져옵니다.
     """
-    _logger.info("Getting visible HTML from current page.")
+    _logger.info(f"[TOOLS] Getting visible HTML from current page.")
     if not _sessions:
         return "No active session. Please create a new session first."
     session_id = list(_sessions.keys())[-1]
