@@ -34,7 +34,7 @@
    # Windows
    uv venv .step02
     .\.step02\Scripts\Activate
-   uv sync --active
+   uv sync --active --pre-released allow
    ```
 
 1. 앱을 실행합니다.
