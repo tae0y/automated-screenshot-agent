@@ -68,29 +68,17 @@ class JobRequest:
         self.user_prompt = user_prompt
 
 
-class WorkerExecutor(Executor):
+class SubmitToWorkerAgent(Executor):
     """
     Worker executor to perform UI tests based on user input.
     """
 
-    def __init__(self, id: str):
+    def __init__(self, id: str, worker_executor_id: str = "worker_agent"):
         """Initialize the WorkerExecutor"""
-        tools = [
-            new_session,
-            navigate,
-            screenshot,
-            click,
-            fill,
-            evaluate,
-            click_text,
-            get_text_content,
-            get_html_content,
-            get_visible_html
-        ]
         super().__init__(
-            id=id or "worker_agent",
-            tools=tools
+            id=id or "submit_to_worker"
         )
+        self.worker_executor_id = worker_executor_id
 
     @handler
     async def do_test(self, request: JobRequest, ctx: WorkflowContext[str]) -> None:
@@ -114,15 +102,7 @@ class WorkerExecutor(Executor):
             {request.user_prompt}
             """
             _logger.debug(f"WorkerExecutor sending prompt: {prompt}")
-            self._result = AgentExecutorRequest(
-                messages=[
-                    ChatMessage(role=Role.USER, content=prompt)
-                ],
-                should_respond=True
-            )
-            _logger.debug(f"WorkerExecutor sending AgentExecutorRequest: {self._result}")
-            await ctx.send_message(self._result)
-
+   
         else:
             prompt = f"""
             The previous task was not completed successfully due to: {request.status.name}.
@@ -130,26 +110,21 @@ class WorkerExecutor(Executor):
 
             You are a QA engineer for UI testing.
             You will process the task based on three steps: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
-            Answer in the format below:
-            ---
-            ASSUMPTION: <your assumption>
-            REASON: <your reasoning including methodology and task>
-            RESULT: <your result>
-            ---
 
             original user request was:
             {request.user_prompt}
             """
             _logger.debug(f"WorkerExecutor sending prompt: {prompt}")
-            self._result = AgentExecutorRequest(
+        
+        await ctx.send_message(
+            AgentExecutorRequest(
                 messages=[
                     ChatMessage(role=Role.USER, content=prompt)
                 ],
                 should_respond=True
-            )
-            _logger.debug(f"WorkerExecutor sending AgentExecutorRequest: {self._result}")
-            await ctx.send_message(self._result)
-        pass
+            ),
+            target_id=self.worker_executor_id
+        )
 
 
 class SubmitToManagerAgent(Executor):
@@ -165,9 +140,8 @@ class SubmitToManagerAgent(Executor):
         self.manager_agent_id = manager_agent_id
 
     @handler
-    async def submit_task(self, response: str, ctx: WorkflowContext[str]) -> None:
-        #response_text = response.agent_run_response.text.strip()
-        response_text = response
+    async def submit_task(self, response: AgentExecutorResponse, ctx: WorkflowContext[str]) -> None:
+        response_text = response.agent_run_response.text.strip()
         prompt = f"""
         You are a QA senior manager overseeing a UI testing worker.
         The worker has processed the task based on three steps: ASSUMPTION, REASON(METHODOLOGY and TASK), RESULT.
@@ -212,12 +186,12 @@ class ParseManagerResponse(Executor):
         response_text = response.agent_run_response.text.strip().upper()
         try:
             if response_text in JobStatus.__members__:
-                ctx.set_output(JobRequest(status=JobStatus[response_text], user_prompt=_user_prompt)) # TODO: sustain user_prompt through workflow... how?
+                await ctx.yield_output(JobRequest(status=JobStatus[response_text], user_prompt=_user_prompt)) # TODO: sustain user_prompt through workflow... how?
             else:
-                ctx.set_output(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt))  # I_DONT_KNOW_WHY_BUT_JUST_RETRY
+                await ctx.yield_output(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt))  # I_DONT_KNOW_WHY_BUT_JUST_RETRY
         except Exception as e:
             _logger.error(f"Error parsing response: {e}")
-            ctx.set_output(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt))
+            await ctx.yield_output(JobRequest(status=JobStatus.JOBSTATUS_CANNOT_PARSED, user_prompt=_user_prompt))
 
 
 class AgentWorkflow:
@@ -241,12 +215,40 @@ class AgentWorkflow:
     
     def _initialize_workflow(self):
         # Create executors
+        tools = [
+            new_session,
+            navigate,
+            screenshot,
+            click,
+            fill,
+            evaluate,
+            click_text,
+            get_text_content,
+            get_html_content,
+            get_visible_html
+        ]
         chat_client = AzureOpenAIChatClient(
             api_key=_config.AZURE_AI_FOUNDRY_API_KEY,
             endpoint=_config.AZURE_AI_FOUNDRY_ENDPOINT,
             deployment_name=_config.AZURE_AI_FOUNDRY_DEPLOYMENT_NAME
         )
-        self.worker_executor = WorkerExecutor(id="worker_agent")
+        self.worker_executor = AgentExecutor(
+            chat_client.create_agent(
+                instructions=(
+                    """
+                    Answer in the format below:
+                    ---
+                    ASSUMPTION: <your assumption>
+                    REASON: <your reasoning including methodology and task>
+                    RESULT: <your result>
+                    ---
+                    """
+                ),
+                tools=tools
+            ),
+            id="worker_agent"
+        )
+        self.submit_to_worker_agent = SubmitToWorkerAgent(id="submit_to_worker", worker_executor_id=self.worker_executor.id)
         self.manager_executor = AgentExecutor(
             chat_client.create_agent(
                 instructions=(
@@ -273,11 +275,12 @@ class AgentWorkflow:
         # Build workflow
         self.workflow = (
             WorkflowBuilder()
+            .add_edge(self.submit_to_worker_agent, self.worker_executor)
             .add_edge(self.worker_executor, self.submit_to_manager_agent)
             .add_edge(self.submit_to_manager_agent, self.manager_executor)
             .add_edge(self.manager_executor, self.parse_manager_response)
-            .add_edge(self.parse_manager_response, self.worker_executor)
-            .set_start_executor(self.worker_executor)
+            .add_edge(self.parse_manager_response, self.submit_to_worker_agent)
+            .set_start_executor(self.submit_to_worker_agent)
             .build()
         )
         pass
@@ -292,11 +295,12 @@ class AgentWorkflow:
                 _logger.warning("Max iterations reached, terminating workflow.")
                 result = str(event.data) if isinstance(event, WorkflowOutputEvent) else "Max iterations reached."
                 break
-            if isinstance(event, ExecutorCompletedEvent) and event.executor_id == self.worker_executor.id:
+            if isinstance(event, ExecutorCompletedEvent) and event.executor_id == self.submit_to_worker_agent.id:
                 _logger.debug(f"WorkerExecutor completed event received.")
+                result = event.data
                 iterations += 1
             elif isinstance(event, WorkflowOutputEvent):
                 _logger.debug(f"Workflow output event received: {event.data}")
                 result = event.data
         _logger.debug(f"Total iterations: {iterations} times.")
-        return result
+        return str(result)
