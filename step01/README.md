@@ -28,6 +28,7 @@
    uv venv .step01
    source .step01/bin/activate
    export UV_PROJECT_ENVIRONMENT=.step01 && uv sync
+   uv run playwright install
    ```
 
    ```bash
@@ -35,6 +36,7 @@
    uv venv .step01
     .\.step01\Scripts\Activate
    uv sync --active
+   uv run playwright install
    ```
 
 1. 앱을 실행합니다.
