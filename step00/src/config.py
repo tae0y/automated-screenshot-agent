@@ -61,8 +61,8 @@ class ConfigManager:
         _config = configparser.ConfigParser()
         if not os.path.exists(config_file_path):
             logger.warning(f"Configuration from {config_file_path} not found.")
-            with open(sample_file_path, 'r') as sample_file:
-                with open(config_file_path, 'w') as config_file:
+            with open(sample_file_path, 'r', encoding='utf-8') as sample_file:
+                with open(config_file_path, 'w', encoding='utf-8') as config_file:
                     config_file.write(sample_file.read())
                     msg = (
                         f"Configuration from {sample_file_path} copied to "
@@ -71,7 +71,7 @@ class ConfigManager:
                     logger.info(msg)
         # Parse the configuration file
         try:
-            _config.read(config_file_path)
+            _config.read(config_file_path, encoding="utf-8")
             self._config = _config
             msg = f"Configuration from {config_file_path} loaded successfully."
             logger.info(msg)
