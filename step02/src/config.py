@@ -40,6 +40,18 @@ class ConfigManager:
         return self._config.get(
             "SCREENSHOT", "SAVE_PATH", fallback="./data/screenshots/"
         )
+        
+    @property
+    def AZURE_AI_FOUNDRY_API_KEY(self):
+        return self._config.get("KERNEL", "AZURE_AI_FOUNDRY_API_KEY", fallback="")
+    
+    @property
+    def AZURE_AI_FOUNDRY_ENDPOINT(self):
+        return self._config.get("KERNEL", "AZURE_AI_FOUNDRY_ENDPOINT", fallback="")
+    
+    @property
+    def AZURE_AI_FOUNDRY_DEPLOYMENT_NAME(self):
+        return self._config.get("KERNEL", "AZURE_AI_FOUNDRY_DEPLOYMENT_NAME", fallback="")
 
     def __new__(cls):
         if cls._instance is None:
@@ -61,8 +73,8 @@ class ConfigManager:
         _config = configparser.ConfigParser()
         if not os.path.exists(config_file_path):
             logger.warning(f"Configuration from {config_file_path} not found.")
-            with open(sample_file_path, 'r', encoding='utf-8') as sample_file:
-                with open(config_file_path, 'w', encoding='utf-8') as config_file:
+            with open(sample_file_path, 'r', encoding="utf-8") as sample_file:
+                with open(config_file_path, 'w', encoding="utf-8") as config_file:
                     config_file.write(sample_file.read())
                     msg = (
                         f"Configuration from {sample_file_path} copied to "
