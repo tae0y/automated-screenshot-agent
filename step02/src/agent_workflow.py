@@ -279,6 +279,8 @@ class AgentWorkflow:
                     Perform UI tests based on the user's requests using the provided tools.
                     Make sure to follow the user's instructions carefully and provide detailed results.
                     If you encounter any issues, describe them clearly in your response.
+                    Infer selector query strings by navigating and inspecting the web page as needed. 
+                    Answer in Korean for final output.
                     
                     MUST USE THE TOOLS PROVIDED TO YOU TO PERFORM ACTIONS ON THE WEB PAGE.
                     """
