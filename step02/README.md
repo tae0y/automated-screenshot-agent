@@ -23,21 +23,21 @@
     ```
 
 1. 파이썬 가상환경을 설정합니다.
-   ```bash
-   # Mac
-   uv venv .step02
-   source .step02/bin/activate
-   export UV_PROJECT_ENVIRONMENT=.step02 && uv sync
-   uv run playwright install
-   ```
+    ```bash
+    # Mac
+    uv venv .step02
+    source .step02/bin/activate
+    export UV_PROJECT_ENVIRONMENT=.step02 && uv sync
+    uv run playwright install
+    ```
 
-   ```bash
-   # Windows
-   uv venv .step02
+    ```bash
+    # Windows
+    uv venv .step02
     .\.step02\Scripts\Activate
-   uv sync --active --pre-released allow
-   uv run playwright install
-   ```
+    uv sync --active --prerelease allow
+    uv run playwright install
+    ```
 
 1. 앱을 실행합니다.
     ```bash

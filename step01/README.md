@@ -26,21 +26,21 @@
     > 더 자세한 내용은 [Get started with Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/quickstarts/get-started-code?tabs=azure-ai-foundry#first-run-experience) 문서를 참고하세요.
 
 1. 파이썬 가상환경을 설정합니다.
-   ```bash
-   # Mac
-   uv venv .step01
-   source .step01/bin/activate
-   export UV_PROJECT_ENVIRONMENT=.step01 && uv sync
-   uv run playwright install
-   ```
+    ```bash
+    # Mac
+    uv venv .step01
+    source .step01/bin/activate
+    export UV_PROJECT_ENVIRONMENT=.step01 && uv sync
+    uv run playwright install
+    ```
 
-   ```bash
-   # Windows
-   uv venv .step01
+    ```bash
+    # Windows
+    uv venv .step01
     .\.step01\Scripts\Activate
-   uv sync --active
-   uv run playwright install
-   ```
+    uv sync --active --prerelease allow
+    uv run playwright install
+    ```
 
 1. 앱을 실행합니다.
     ```bash
