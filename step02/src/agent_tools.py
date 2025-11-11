@@ -32,7 +32,8 @@ async def new_session(url: Annotated[str, Field(description="The URL to navigate
     try:
         global _playwright
         _playwright = await async_playwright().start()
-        browser = await _playwright.chromium.launch(headless=True)
+        # TODO: headless=False는 데모용
+        browser = await _playwright.chromium.launch(headless=False)
         page = await browser.new_page()
         session_id = str(uuid.uuid4())
         _sessions[session_id] = {"browser": browser, "page": page}
@@ -218,7 +219,8 @@ async def get_visible_html() -> Annotated[str, "Visible HTML content"]:
         visible_html = await page.locator("body").inner_html()
         cleaned_html = await _clean_html(visible_html)
         _logger.debug(f"Visible HTML fetched and cleaned. before length: {len(visible_html)}, after length: {len(cleaned_html)}")
-        return cleaned_html
+        # TODO: 토큰 절약을 위해 cleaned_html 반환, 현재는 cleaned된 html에서 dom을 잘 읽지 못해 visible_html 반환
+        return visible_html
     except Exception as e:
         return f"Failed to get visible HTML: {e}"
 
