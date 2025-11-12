@@ -1,4 +1,4 @@
-# STEP 01 : Playwright MCP를 사용해 자동점검
+# STEP 01 : LLM에게 테스트 시나리오 알려주면 Playwright로 알아서 테스트,스크린샷
 
 - 당초 프로세스: 스케줄 작업으로 스크린샷, 당직자는 확인후 보고(5분 내외)
 - 변경 프로세스: 추가로 당직자는 자연어로 시스템 정상인지 질의, 결과 확인후 보고
@@ -53,7 +53,8 @@
 1. Swagger 화면에서 `/mcp/screenshot` 엔드포인트에 요청내용을 입력하고 결과를 확인합니다.
 
     ```
-    Q. https://news.jtbc.co.kr/ 사이트 접속해서 메인 기사 내용 요약좀 해줘
+    Q. https://news.jtbc.co.kr/ 사이트 접속해서 메인 기사 클릭해서 들어가.\
+    기사 내용이 잘 표시되면 테스트 성공이야. 테스트 결과에는 기사 내용도 간략히 요약해서 제출하도록해.\
     A. 현재 JTBC 뉴스의 주요 기사 내용을 요약하면 다음과 같습니다: (이하 생략)
     ```
 
@@ -97,7 +98,7 @@
 
     > 검증 결과를 파일로 출력하려면 `flake8 src/ tests/ --count --show-source --statistics > flake8.log 2>&1` 명령어를 사용하세요.
 
-2. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
+1. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
     ```bash
     # Mac/bash
     export UV_PROJECT_ENVIRONMENT=.step01 && uv sync --group dev
