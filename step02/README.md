@@ -22,6 +22,9 @@
     cp config.sample.ini config.ini
     ```
 
+    생성한 config.ini를 열어 Azure AI Foundry apiKey, endpoint, deploymentName을 설정합니다.
+    > 더 자세한 내용은 [Get started with Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-foundry/quickstarts/get-started-code?tabs=azure-ai-foundry#first-run-experience) 문서를 참고하세요.
+
 1. 파이썬 가상환경을 설정합니다.
     ```bash
     # Mac
@@ -47,7 +50,18 @@
 
 1. `/docs` Swagger 화면에 접속해 API 명세를 확인하세요.
 
-1. 위와 같이 앱을 실행한 다음 외부 스케줄러를 사용해 호출합니다.
+1. Swagger 화면에서 `/agents/screenshot` 엔드포인트에 요청내용을 입력하고 결과를 확인합니다.
+
+    ```
+    Q. https://news.jtbc.co.kr/ 사이트 접속해서 메인 기사 클릭해서 들어가.\
+    기사 내용이 잘 표시되면 테스트 성공이야. 테스트 결과에는 기사 내용도 간략히 요약해서 제출하도록해.\
+    A. 현재 JTBC 뉴스의 주요 기사 내용을 요약하면 다음과 같습니다: (이하 생략)
+    ```
+
+    ```
+    Q. https://newstapa.org/ 사이트에 세금 오남용 추적 메뉴 접속해서 스크린샷 찍어줘.
+    A. (캡처후 Base64로 인코딩한 이미지를 응답, 혹은 data/screenshot 경로에 파일로 저장)
+    ```
 
 ## How to test
 
@@ -83,7 +97,7 @@
 
     > 검증 결과를 파일로 출력하려면 `flake8 src/ tests/ --count --show-source --statistics > flake8.log 2>&1` 명령어를 사용하세요.
 
-2. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
+1. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
     ```bash
     # Mac/bash
     export UV_PROJECT_ENVIRONMENT=.step02 && uv sync --group dev

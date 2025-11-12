@@ -53,7 +53,8 @@
 1. Swagger 화면에서 `/mcp/screenshot` 엔드포인트에 요청내용을 입력하고 결과를 확인합니다.
 
     ```
-    Q. https://news.jtbc.co.kr/ 사이트 접속해서 메인 기사 내용 요약좀 해줘
+    Q. https://news.jtbc.co.kr/ 사이트 접속해서 메인 기사 클릭해서 들어가.\
+    기사 내용이 잘 표시되면 테스트 성공이야. 테스트 결과에는 기사 내용도 간략히 요약해서 제출하도록해.\
     A. 현재 JTBC 뉴스의 주요 기사 내용을 요약하면 다음과 같습니다: (이하 생략)
     ```
 
@@ -97,7 +98,7 @@
 
     > 검증 결과를 파일로 출력하려면 `flake8 src/ tests/ --count --show-source --statistics > flake8.log 2>&1` 명령어를 사용하세요.
 
-2. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
+1. API 설계가 Convention을 준수하는지 openapi-spec-validator를 사용해 다음과 같이 확인합니다.
     ```bash
     # Mac/bash
     export UV_PROJECT_ENVIRONMENT=.step01 && uv sync --group dev
