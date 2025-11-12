@@ -6,6 +6,9 @@ on:
     paths:
       - 'step01/**'
       - '.github/workflows/on-pull-requests-step01.yaml'
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.ini'
 
 jobs:
   step01:
