@@ -36,5 +36,5 @@
     > Semantic Kernel은 Azure AI Foundry뿐 아니라 Google VertexAI, Amazon Bedrock, Open AI Inference API 등 다양한 AI 서비스 제공자를 지원합니다.
 - [Microsoft `Agent Framework` Quick-Start Guide](https://learn.microsoft.com/en-us/agent-framework/tutorials/quick-start?pivots=programming-language-python): 
   - Semantic Kernel의 간편함과 Autogen의 Workflow 기능을 계승한 AI 에이전트 프레임워크입니다.
-  - .NET/Python 생태게를 지원합니다.
+  - .NET/Python 생태계를 지원합니다.
     > Agent Framework는 Azure AI Foundry뿐 아니라 Google VertexAI, Amazon Bedrock, Open AI Inference API 등 다양한 AI 서비스 제공자를 지원합니다.
